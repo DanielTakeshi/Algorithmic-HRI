@@ -20,13 +20,19 @@ Games tested/verified/understood with notes:
 1. [None]
 """
 
+import os
+import errno
+import re
+import glob
 import sys
+import string
 from ale_python_interface import ALEInterface
 import pygame
 import scipy.misc
 from PIL import Image
-
+import time
 import numpy as np
+import utilities
 np.set_printoptions(edgeitems=20)
 
 # For now keep this global and intact. It's ugly, but works.
@@ -68,12 +74,13 @@ key_action_tform_table = (
 class HumanPlayer(object):
     """ Represents a human playing one Atari game (for one episode). """
 
-    def __init__(self, game="breakout.bin", rand_seed=1):
+    def __init__(self, game="breakout.bin", rand_seed=1, output_dir="output/"):
         self.ale = ALEInterface()
         self.game = game
         self.actions = []
         self.rewards = []
         self.screenshots = []
+        self.output_dir = output_dir
 
         # Set values of any flags (must call loadROM afterwards).
         self.ale.setInt("random_seed", rand_seed)
@@ -86,12 +93,10 @@ class HumanPlayer(object):
             self.random_seed, self.legal_actions))
 
 
-    def play(self):
+    def play_and_save(self):
         """ The human player now plays!
 
-        Inputs:
-        - out_frames The files to store frames.
-        - out_actions The files to put frames in.
+        After playing it calls a post-processing step.
         """
 
         # Both screen and game_surface are: <type 'pygame.Surface'>.
@@ -104,6 +109,7 @@ class HumanPlayer(object):
         clock = pygame.time.Clock()
         total_reward = 0.0 
         time_steps = 0
+        start_time = time.time()
 
         # Iterate through game turns.
         while not self.ale.game_over():
@@ -117,8 +123,8 @@ class HumanPlayer(object):
             keys |= pressed[pygame.K_LEFT]  <<2
             keys |= pressed[pygame.K_RIGHT] <<3
             keys |= pressed[pygame.K_z] <<4
-            a = key_action_tform_table[keys]
-            reward = self.ale.act(a);
+            action = key_action_tform_table[keys]
+            reward = self.ale.act(action);
             total_reward += reward
 
             # Clear screen and get pixels from atari on the surface via blit.
@@ -141,18 +147,50 @@ class HumanPlayer(object):
             clock.tick(60.) # Higher number means game moves faster ..
 
             self.rewards.append(reward)
-            self.actions.append(a)
+            self.actions.append(action)
             self.screenshots.append(rgb_image)
 
         # Collect statistics and start post-processing.
         episode_frame_number = self.ale.getEpisodeFrameNumber()
         assert episode_frame_number == time_steps, \
             "episode_frame_number = {}, time_steps = {}".format(episode_frame_number, time_steps)
+        end_time = time.time() - start_time
         print("Number of frames: {}".format(episode_frame_number))
+        print("Game lasted {:.4f} seconds.".format(end_time))
+        print("Total reward: {}.".format(total_reward))
         self.post_process()
 
 
     def post_process(self):
-        """ Now save my game frames and actions. """
-        print("Not yet implemented")
+        """ Now save my game frames and actions. 
+        
+        This creates three sets of files in self.output_dir/game_name:
+        -> screenshots: contains screenshots (one screenshot per file)
+        -> rewards: contains rewards (one file, one reward per line)
+        -> actions: contains actions (one file, one action per line)
+
+        These are nested within self.output_dir/game_name according to the game
+        ID, in files 'game_ID', which we determine here by looking at the
+        numbers that exist.  The IDs should be listed in order as I increment
+        them each time. Also, I pad the numbers to make it easier to read later
+        once more games are added.
+
+        TODO screenshots, etc.
+        """
+
+        # A bit clumsy but it works if I call in correct directory.
+        game_name = (self.game.split("/")[1]).split(".")[0]
+        padding_digits = 4
+        current_games = glob.glob(self.output_dir+ "/" +game_name+ "/game*")
+        next_index = 0
+
+        if len(current_games) != 0:
+            previous_index = re.findall('\d+', current_games[-1])[0]
+            next_index = int(previous_index)+1
+
+        game_id = string.zfill(next_index, padding_digits)
+        head_dir = self.output_dir+ "/" +game_name+ "/game_" +game_id
+        utilities.make_sure_path_exists(head_dir)
+        np.savetxt(head_dir+ "/actions.txt", self.actions, fmt="%d")
+        np.savetxt(head_dir+ "/rewards.txt", self.rewards, fmt="%d")
 
