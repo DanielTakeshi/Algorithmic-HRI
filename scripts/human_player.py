@@ -144,7 +144,7 @@ class HumanPlayer(object):
                 exit = True
             if exit:
                 break
-            clock.tick(60.) # Higher number means game moves faster ..
+            clock.tick(60.) # Higher number means game moves faster.
 
             self.rewards.append(reward)
             self.actions.append(action)
@@ -175,7 +175,9 @@ class HumanPlayer(object):
         them each time. Also, I pad the numbers to make it easier to read later
         once more games are added.
 
-        TODO screenshots, etc.
+        TODO I should have a flag to save only every k-th frame. The actions and
+        rewards can probably be the same, and I'll need to be careful to track
+        rewards anyway.
         """
 
         # A bit clumsy but it works if I call in correct directory.
@@ -190,7 +192,21 @@ class HumanPlayer(object):
 
         game_id = string.zfill(next_index, padding_digits)
         head_dir = self.output_dir+ "/" +game_name+ "/game_" +game_id
-        utilities.make_sure_path_exists(head_dir)
+        utilities.make_path_check_exists(head_dir)
+
+        # TODO Check if rewards ever have floats but most are integers, I think.
         np.savetxt(head_dir+ "/actions.txt", self.actions, fmt="%d")
         np.savetxt(head_dir+ "/rewards.txt", self.rewards, fmt="%d")
 
+        utilities.make_path_check_exists(head_dir+ "/screenshots/")
+        padding_digits_fr = 6 # TODO Check if I can extract max value automatically.
+        print("Now saving images ...")
+        for (frame_index, scr) in enumerate(self.screenshots):
+            if frame_index % 1000 == 0:
+                print("Saved {} frames so far.".format(frame_index))
+            # Be sure to transpose, otherwise it's "sideways." Assumes RGB.
+            im = Image.fromarray(scr.transpose(1,0,2)) 
+            pad_frame_num = string.zfill(frame_index, padding_digits_fr)
+            im.save(head_dir+ "/screenshots/frame_" +pad_frame_num+ ".png")
+
+        print("Done with post processing.")
