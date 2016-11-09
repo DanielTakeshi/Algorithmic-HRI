@@ -184,6 +184,7 @@ class HumanPlayer(object):
         game_name = (self.game.split("/")[1]).split(".")[0]
         padding_digits = 4
         current_games = glob.glob(self.output_dir+ "/" +game_name+ "/game*")
+        current_games.sort()
         next_index = 0
 
         if len(current_games) != 0:
