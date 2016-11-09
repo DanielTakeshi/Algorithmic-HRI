@@ -1,0 +1,58 @@
+A simple text file to remind myself about game details.
+
+A word on actions: even if I press very fast on my keyboard, I can usually at
+best get the action to repeat two frames, not one frame. So I **think** it will
+be OK if we just search for the next single action to take after some time steps
+have passed after the frame.
+
+Idea 1: for all games, should we just disable the NO-OP action? Otherwise I'll get
+so many of those actions it doesn't make sense.
+
+Idea 2: for Breakout and games where fire happens very infrequently (note: this
+is not the case for Space Invaders) we should just hard-code that in?
+
+Idea 3: eliminate the first 20 frames of the game. No action usually happens for
+those (in Breakout I press really fast but it still takes nearly that amount of
+time for the act to register). Or I can just ignore this, it's likely not a big
+deal. Also, don't remove actions at the end, because there is no lag, i.e. I
+can keep moving LEFT in Breakout at the end, and the game WILL register that. So
+don't crop off at the end.
+
+******************************
+** CHECKLIST BEFORE PLAYING **
+******************************
+
+I thought I'd add this to prevent myself from messing up every now and then.
+Follow these guidelines:
+
+1. Make sure the directories are clean, numbered consecutively, etc.
+
+2. For games like Breakout, only use LEFT and RIGHT, and try to use LEFT/RIGHT
+very frequently, to maximize the amount of data with those.
+
+3. Don't conflate FIRE with LEFT/RIGHT, especiall for Breakout, unless it's for
+games like Space Invaders where it's unavoidable.
+
+4. After EVERY game is over, inspect the output files making sure everything
+proceeded as normal, nothing out of the ordinary. If so, you better delete some
+files!
+
+**************
+** BREAKOUT **
+**************
+
+Actions:
+NO-OP (coded as "0")
+FIRE (coded as "1") 
+LEFT (coded as "4")
+RIGHT (coded as "3")
+FIRE LEFT (coded as "12")
+FIRE RIGHT (coded as "11")
+
+The FIRE will be tricky to train, maybe force it? It only happens on the order
+of 5 times per game and if we do it more often it has no effect.
+
+Also, ack, I just saw FIRE LEFT and FIRE RIGHT. Whatever you do, make sure you
+don't move left while firing! That will trigger those extra actions. We
+**really** want it to be only 0s, 1s, 3s, and 4s, and then in training I'll dump
+the 1s (and maybe even the 0s).
