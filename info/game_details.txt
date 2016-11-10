@@ -9,7 +9,9 @@ Idea 1: for all games, should we just disable the NO-OP action? Otherwise I'll g
 so many of those actions it doesn't make sense.
 
 Idea 2: for Breakout and games where fire happens very infrequently (note: this
-is not the case for Space Invaders) we should just hard-code that in?
+is not the case for Space Invaders) we should just hard-code that in? EDIT: No,
+don't do that! Just set the policy to play random actions \epsilon-percent of
+the time. That will let us fire, and it doesn't make a difference in Breakout.
 
 Idea 3: eliminate the first 20 frames of the game. No action usually happens for
 those (in Breakout I press really fast but it still takes nearly that amount of

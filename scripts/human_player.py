@@ -15,9 +15,9 @@ while so I'll probably just call these as needed. Also, after every game, I can
 double check if the is enough RAM to store all the screenshots. Store them on my
 work station!
 
-Games tested/verified/understood with notes:
+Games tested/verified/understood with notes (see other files for details):
 
-1. [None]
+1. Brekout
 """
 
 import os
@@ -99,6 +99,8 @@ class HumanPlayer(object):
         After playing it calls a post-processing step.
         """
 
+        # TODO Figure out how to save checkpoints!
+
         # Both screen and game_surface are: <type 'pygame.Surface'>.
         pygame.init()
         screen = pygame.display.set_mode((320,420))
@@ -162,22 +164,19 @@ class HumanPlayer(object):
 
 
     def post_process(self):
-        """ Now save my game frames and actions. 
+        """ Now save my game frames, actions, rewards, and checkpoints. 
         
         This creates three sets of files in self.output_dir/game_name:
         -> screenshots: contains screenshots (one screenshot per file)
         -> rewards: contains rewards (one file, one reward per line)
         -> actions: contains actions (one file, one action per line)
+        -> checkpoints: contains checkpoints (one file, checkpoints)
 
         These are nested within self.output_dir/game_name according to the game
         ID, in files 'game_ID', which we determine here by looking at the
         numbers that exist.  The IDs should be listed in order as I increment
         them each time. Also, I pad the numbers to make it easier to read later
         once more games are added.
-
-        TODO I should have a flag to save only every k-th frame. The actions and
-        rewards can probably be the same, and I'll need to be careful to track
-        rewards anyway.
         """
 
         # A bit clumsy but it works if I call in correct directory.
@@ -199,8 +198,9 @@ class HumanPlayer(object):
         np.savetxt(head_dir+ "/actions.txt", self.actions, fmt="%d")
         np.savetxt(head_dir+ "/rewards.txt", self.rewards, fmt="%d")
 
+        # TODO Check if I can extract max value automatically.
         utilities.make_path_check_exists(head_dir+ "/screenshots/")
-        padding_digits_fr = 6 # TODO Check if I can extract max value automatically.
+        padding_digits_fr = 6 
         print("Now saving images ...")
         for (frame_index, scr) in enumerate(self.screenshots):
             if frame_index % 1000 == 0:
