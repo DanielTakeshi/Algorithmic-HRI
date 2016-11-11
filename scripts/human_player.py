@@ -17,7 +17,7 @@ work station!
 
 Games tested/verified/understood with notes (see other files for details):
 
-1. Brekout
+1. Breakout
 """
 
 import os
