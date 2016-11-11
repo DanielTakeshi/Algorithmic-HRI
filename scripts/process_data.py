@@ -136,6 +136,7 @@ def downsample_all(game_name, output_dir):
     utilities.make_path_check_exists(head_dir+ "phis/")
 
     for game_dir in current_games:
+        start = t
         with open(game_dir+'/actions.txt', 'r') as f_actions, \
             open(game_dir+'/rewards.txt', 'r') as f_rewards:
 
@@ -175,10 +176,12 @@ def downsample_all(game_name, output_dir):
                 np.save(head_dir+ "phis/phi_" +padded_t, phi)
                 target_actions.append(actions_raw[scr_index])
                 t += 1
+        logger.info("Finished processing game, number of phis/actions = {}.".format(t-start))
 
     np.savetxt(head_dir+ "actions_target.txt", 
                np.array(target_actions).astype('uint8'),
                fmt='%d')
+    logger.info("Finished all games. Number of phis/actions = {}.".format(t))
 
 
 if __name__ == "__main__":
