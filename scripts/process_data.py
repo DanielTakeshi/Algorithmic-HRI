@@ -1,23 +1,16 @@
 """
 Given all of the output files as determined by the run.py and human_player.py
-scripts, we run this to transform it entirely into a script for caffe. For now
-just call it from the normal directory of the project. That is, after running:
+scripts, we run this to transform it entirely into a script for deep learning
+software. For now just call it from the normal directory of the project. That
+is, after running:
 
     python scripts/run.py roms/breakout.bin
 
 From the home directory (doesn't have to be Breakout), we simply call:
 
-    python scripts/process_data_caffe.py
+    python scripts/process_data.py
 
-And this will produce all the data files we need. Note, this WILL call caffe's
-convert_imageset code! Be careful and also be sure I can access caffe.
-
-All optional arguments should go in the main method here. And to assist with
-debugging, this produces a log file.
-
-UPDATE: Well I think I'll use Tensorflow instead, not sure if I want to risk
-problems with caffe assuming it needs images ... and I wanted to learn
-tensorflow anyway!
+I am probably going to use TensorFlow.
 """
 
 import cv2
@@ -184,6 +177,47 @@ def downsample_all(game_name, output_dir):
     logger.info("Finished all games. Number of phis/actions = {}.".format(t))
 
 
+def sample_indices(game_name, distribution):
+    """
+    Given the phis and targets (actions), sample them to balance data.
+
+    This assumes Breakout! We assume we only care about 0,3, and 4 actions.
+    We'll have to figure out someting about that later.
+
+    Args:
+        game_name: The game we are using. Supported games: 'breakout'.
+        distribution: The desired class distribution. For Breakout, with three
+            main actions, this means we ideally have [1/3,1/3,1/3]. Other
+            distributions may be more desirable depending on the circumstances.
+            NOTE! I do not actually use this right now ... for the sake of time
+            I just want to get things running now so will assume balance.
+    Returns:
+        The set of indices for the actual data that we use for Deep Learning.
+    """
+    if (game_name != "breakout"):
+        raise ValueError("game_name \'{}\' is not supported".format(game_name))
+    head_dir = "data_raw/" +game_name+ "/"
+
+    actions = np.loadtxt(head_dir+ "actions_target.txt")
+    (unique_a, counts_a) = np.unique(actions, return_counts=True)
+    logger.info("\nUnique actions: {},\ncorresponding counts: {}".format(unique_a,counts_a))
+
+    # For Breakout, but noop, left, and right are consistent among games.
+    indices_noop_all = np.where(actions == 0)[0]
+    indices_left = np.where(actions == 4)[0]
+    indices_right = np.where(actions == 3)[0]
+    num_noop_touse = (len(indices_left)+len(indices_right))/2.
+    indices_noop = np.random.choice(indices_noop_all, 
+                                    size=num_noop_touse,
+                                    replace= False)
+
+    # This is the final set of indices to use for train/valid/test data.
+    indices_all = np.concatenate((indices_noop, indices_left, indices_right))
+    np.random.shuffle(indices_all)
+    assert len(indices_all) <= len(actions)
+    return indices_all
+
+
 if __name__ == "__main__":
     """ A sequence of calls to get the data into a form usable by caffe. """
 
@@ -191,10 +225,12 @@ if __name__ == "__main__":
     output_dir = "output/" +game_name
 
     # First: go through games I played (for game_name), save phis and actions.
-    downsample_all(game_name, output_dir) 
+    #downsample_all(game_name, output_dir) 
 
     # Second: subsample these to balance dataset.
-    # TODO
+    distribution = np.array([0.33,0.33,0.33])
+    distribution /= np.sum(distribution)
+    indices = sample_indices(game_name, distribution)
 
     # Third: rearrange them into stuff that can be used by TensorFlow.
     # TODO
