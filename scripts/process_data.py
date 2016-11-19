@@ -10,7 +10,9 @@ From the home directory (doesn't have to be Breakout), we simply call:
 
     python scripts/process_data.py
 
-I am probably going to use TensorFlow.
+If I want to delete the data, just delete whatever this file creates (don't
+delete the raw data files from the games!).  I am probably going to use
+TensorFlow, so this should be a good learning experience.
 """
 
 import cv2
@@ -49,6 +51,7 @@ logger.addHandler(ch)
 # Other global variables #
 # ---------------------- #
 DIGITS_SCREENSHOTS = 6
+PAD_T = 7 # One more than screenshots
 PHI_LENGTH = 4
 RESIZED_HEIGHT = 84
 RESIZED_WIDTH = 84
@@ -107,26 +110,26 @@ def downsample_single(game_name, frame_raw_color):
     return cropped
 
 
-def downsample_all(game_name, output_dir):
+def downsample_all(game_name, output_dir, raw_data_dir):
     """ Downsample all images and save images/actions in files.
 
     Specifically, this will create output files:
-        - data/game_name/phis/{}.npy // One per 'phi'
-        - data/game_name/targets.txt // Text file, the action per line.
+        - data_raw/game_name/phis/{}.npy // One per 'phi', i.e. four frames.
+        - data_raw/game_name/actions_target.txt // Text file, the action per line.
 
     Args:
         game_name: The game we are using. Supported games: 'breakout'.
         output_dir: File path that ends at the game name.
+        raw_data_dir: Where the downsampled files are stored! It should be
+            data_raw/game_name/.
     """
     current_games = glob.glob(output_dir+ "/game_*")
     current_games.sort()
 
     # We now save in one directory.
     t = 0 
-    pad_t = DIGITS_SCREENSHOTS+1
     target_actions = []
-    head_dir = "data_raw/" +game_name+ "/"
-    utilities.make_path_check_exists(head_dir+ "phis/")
+    utilities.make_path_check_exists(raw_data_dir+ "/phis/")
 
     for game_dir in current_games:
         start = t
@@ -165,40 +168,36 @@ def downsample_all(game_name, output_dir):
                 phi = np.roll(phi, shift=-1, axis=0) # Shift frames 'backward'.
                 phi[PHI_LENGTH-1] = frame # Update the most recent frame.
 
-                padded_t = str(t).zfill(pad_t)
-                np.save(head_dir+ "phis/phi_" +padded_t, phi)
+                padded_t = str(t).zfill(PAD_T)
+                np.save(raw_data_dir+ "/phis/phi_" +padded_t, phi)
                 target_actions.append(actions_raw[scr_index])
                 t += 1
         logger.info("Finished processing game, number of phis/actions = {}.".format(t-start))
 
-    np.savetxt(head_dir+ "actions_target.txt", 
+    np.savetxt(raw_data_dir+ "/actions_target.txt", 
                np.array(target_actions).astype('uint8'),
                fmt='%d')
     logger.info("Finished all games. Number of phis/actions = {}.".format(t))
 
 
-def sample_indices(game_name, distribution):
+def sample_indices(game_name, raw_data_dir):
     """
     Given the phis and targets (actions), sample them to balance data.
 
-    This assumes Breakout! We assume we only care about 0,3, and 4 actions.
+    This assumes Breakout! We assume we only care about 0, 3, and 4 actions.
     We'll have to figure out someting about that later.
 
     Args:
         game_name: The game we are using. Supported games: 'breakout'.
-        distribution: The desired class distribution. For Breakout, with three
-            main actions, this means we ideally have [1/3,1/3,1/3]. Other
-            distributions may be more desirable depending on the circumstances.
-            NOTE! I do not actually use this right now ... for the sake of time
-            I just want to get things running now so will assume balance.
+        raw_data_dir: Where the downsampled files are stored.
+
     Returns:
-        The set of indices for the actual data that we use for Deep Learning.
+        The (shuffled) indices for the actual data we use for Deep Learning.
     """
     if (game_name != "breakout"):
         raise ValueError("game_name \'{}\' is not supported".format(game_name))
-    head_dir = "data_raw/" +game_name+ "/"
 
-    actions = np.loadtxt(head_dir+ "actions_target.txt")
+    actions = np.loadtxt(raw_data_dir+ "/actions_target.txt")
     (unique_a, counts_a) = np.unique(actions, return_counts=True)
     logger.info("\nUnique actions: {},\ncorresponding counts: {}".format(unique_a,counts_a))
 
@@ -218,22 +217,84 @@ def sample_indices(game_name, distribution):
     return indices_all
 
 
+def create_test_valid_train(indices, ratio, raw_data_dir, final_data_dir):
+    """ Given shuffled indices, create train/valid/test data/label files.
+
+    Args:
+        indices: The indices within the actual data (i.e. phi index) which
+            we use for training, validation, and test. It is ALREADY
+            shuffled so we should just take the corresponding proportions.
+        ratio: An array with desired proportions of train/valid/test data.
+        raw_data_dir: Where we can access the phis and actions.
+        final_data_dir: The "final" data directory where we store the data in
+            numpy arrays, to be used as input to TensorFlow.
+    """
+    if np.sum(ratio) != 1:
+        logger.info("Warning, np.sum(ratio)!=1, currently re-normalizing ...")
+        ratio = ratio / np.sum(ratio)
+    N = len(indices)
+    actions = np.loadtxt(raw_data_dir+ "/actions_target.txt")
+
+    # We need the padded versions, with PAD_T, to refer to the phis.
+    indices_padded = [str(t).zfill(PAD_T) for t in indices]
+    train_indices = indices_padded[ : int(N*ratio[0])]
+    valid_indices = indices_padded[int(N*ratio[0]) : int(N*(ratio[0]+ratio[1]))]
+    test_indices  = indices_padded[int(N*(ratio[0]+ratio[1])) : ]
+    assert len(valid_indices) < len(test_indices) < len(train_indices)
+
+    # We now know dimensions of the datasets to use (might have h/w switched but w/e).
+    train_data = np.zeros((len(train_indices),RESIZED_HEIGHT,RESIZED_WIDTH,PHI_LENGTH))
+    valid_data = np.zeros((len(valid_indices),RESIZED_HEIGHT,RESIZED_WIDTH,PHI_LENGTH))
+    test_data  = np.zeros((len(test_indices) ,RESIZED_HEIGHT,RESIZED_WIDTH,PHI_LENGTH))
+    train_labels = np.zeros(len(train_indices))
+    valid_labels = np.zeros(len(valid_indices))
+    test_labels  = np.zeros(len(test_indices))
+
+    for (i,v) in enumerate(train_indices):
+        train_data[i] = np.load(raw_data_dir+ "/phis/phi_" +v+ ".npy").transpose(1,2,0)
+        train_labels[i] = actions[int(v)]
+
+    for (i,v) in enumerate(valid_indices):
+        valid_data[i] = np.load(raw_data_dir+ "/phis/phi_" +v+ ".npy").transpose(1,2,0)
+        valid_labels[i] = actions[int(v)]
+
+    for (i,v) in enumerate(test_indices):
+        test_data[i] = np.load(raw_data_dir+ "/phis/phi_" +v+ ".npy").transpose(1,2,0)
+        test_labels[i] = actions[int(v)]
+
+    logger.info("Now saved information in {train,valid,test}.{data,labels} ...")
+    logger.info("train_data,labels.shape: {} and {}".format(train_data.shape,train_labels.shape))
+    logger.info("valid_data,labels.shape: {} and {}".format(valid_data.shape,valid_labels.shape))
+    logger.info("test_data,labels.shape: {} and {}".format(test_data.shape,test_labels.shape))
+
+    utilities.make_path_check_exists(final_data_dir)
+    np.save(final_data_dir+ "/train.data", train_data)
+    np.save(final_data_dir+ "/valid.data", valid_data)
+    np.save(final_data_dir+ "/test.data", test_data)
+    np.save(final_data_dir+ "/train.labels", train_labels)
+    np.save(final_data_dir+ "/valid.labels", valid_labels)
+    np.save(final_data_dir+ "/test.labels", test_labels)
+
+
 if __name__ == "__main__":
-    """ A sequence of calls to get the data into a form usable by caffe. """
+    """ 
+    A sequence of calls to get the data into a form usable by TensorFlow.
+    First, we go through all the games and save phis and actions. Second, we get
+    a set of balanced indices 
+    """
 
     game_name = "breakout"
     output_dir = "output/" +game_name
+    raw_data_dir = "data_raw/" +game_name
+    final_data_dir = "final_data/" +game_name
 
     # First: go through games I played (for game_name), save phis and actions.
-    #downsample_all(game_name, output_dir) 
+    downsample_all(game_name, output_dir, raw_data_dir) 
 
-    # Second: subsample these to balance dataset.
-    distribution = np.array([0.33,0.33,0.33])
-    distribution /= np.sum(distribution)
-    indices = sample_indices(game_name, distribution)
-
-    # Third: rearrange them into stuff that can be used by TensorFlow.
-    # TODO
+    # Second: subsample these to balance dataset and save into new arrays.
+    indices = sample_indices(game_name, raw_data_dir)
+    ratio = np.array([0.76, 0.04, 0.2])
+    create_test_valid_train(indices, ratio, raw_data_dir, final_data_dir)
 
     # A quick reminder at the end to save the log.
     logger.info("All done. Rename log.txt if you want to save the log." \
