@@ -16,3 +16,16 @@ those as datapoints.
 
 TODO clean this up ...
 
+After running scripts/process_data, get something lke:
+
+$ls -lh final_data/breakout/
+total 7.1G
+-rw-rw-r-- 1 daniel daniel 1.5G Nov 19 13:15 test.data.npy
+-rw-rw-r-- 1 daniel daniel  53K Nov 19 13:15 test.labels.npy
+-rw-rw-r-- 1 daniel daniel 5.4G Nov 19 13:15 train.data.npy
+-rw-rw-r-- 1 daniel daniel 200K Nov 19 13:15 train.labels.npy
+-rw-rw-r-- 1 daniel daniel 289M Nov 19 13:15 valid.data.npy
+-rw-rw-r-- 1 daniel daniel  11K Nov 19 13:15 valid.labels.npy
+
+And so these have shape (for instance) (N,84,84,4). Then I can use some of the
+MNIST data examples online to transform those into TFRecords files!
