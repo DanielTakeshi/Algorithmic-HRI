@@ -86,10 +86,8 @@ def downsample_single(game_name, frame_raw_color):
     DQN (and potentially other algorithms). This is also game-dependent since
     different games take different components of the screen. In general, this
     defaults to reducing (210,160,3)-dimensional numpy arrays into grayscales
-    with shape (84,84).
-
-    For now we will use spragnur's method with cropping; his scaling method is
-    probably going to be worse.
+    with shape (84,84).  For now we will use spragnur's method with cropping;
+    his scaling method is probably going to be worse.
 
     Args:
         game_name: The game we are using. Supported games: 'breakout'.
@@ -205,7 +203,8 @@ def sample_indices(game_name, raw_data_dir):
     indices_noop_all = np.where(actions == 0)[0]
     indices_left = np.where(actions == 4)[0]
     indices_right = np.where(actions == 3)[0]
-    num_noop_touse = (len(indices_left)+len(indices_right))/2.
+    num_noop_touse = (len(indices_left)+len(indices_right))/2
+    logger.info("num_noop_touse = {}".format(num_noop_touse))
     indices_noop = np.random.choice(indices_noop_all, 
                                     size=num_noop_touse,
                                     replace= False)
@@ -217,23 +216,34 @@ def sample_indices(game_name, raw_data_dir):
     return indices_all
 
 
-def create_test_valid_train(indices, ratio, raw_data_dir, final_data_dir):
+def create_test_valid_train(game_name, indices, ratio, raw_data_dir, final_data_dir):
     """ Given shuffled indices, create train/valid/test data/label files.
 
+    Don't forget to use (N,depth,height,width) as the shape, and to have actions
+    be 0,1,2,... instead of 0,4,3,...
+
     Args:
+        game_name: The name of the game (only breakout supported).
         indices: The indices within the actual data (i.e. phi index) which
             we use for training, validation, and test. It is ALREADY
             shuffled so we should just take the corresponding proportions.
         ratio: An array with desired proportions of train/valid/test data.
         raw_data_dir: Where we can access the phis and actions.
         final_data_dir: The "final" data directory where we store the data in
-            numpy arrays, to be used as input to TensorFlow.
+            numpy arrays, to be used as input to theano/lasagne.
     """
     if np.sum(ratio) != 1:
         logger.info("Warning, np.sum(ratio)!=1, currently re-normalizing ...")
         ratio = ratio / np.sum(ratio)
     N = len(indices)
     actions = np.loadtxt(raw_data_dir+ "/actions_target.txt")
+
+    # Maps non-consecutive actions into consecutive numerical range (0,1,2,...).
+    a_map = {}
+    if (game_name == "breakout"):
+        a_map = {0:0, 4:1, 3:2}
+    else:
+        raise ValueError("game_name not supported")
 
     # We need the padded versions, with PAD_T, to refer to the phis.
     indices_padded = [str(t).zfill(PAD_T) for t in indices]
@@ -242,25 +252,25 @@ def create_test_valid_train(indices, ratio, raw_data_dir, final_data_dir):
     test_indices  = indices_padded[int(N*(ratio[0]+ratio[1])) : ]
     assert len(valid_indices) < len(test_indices) < len(train_indices)
 
-    # We now know dimensions of the datasets to use (might have h/w switched but w/e).
-    train_data = np.zeros((len(train_indices),RESIZED_HEIGHT,RESIZED_WIDTH,PHI_LENGTH))
-    valid_data = np.zeros((len(valid_indices),RESIZED_HEIGHT,RESIZED_WIDTH,PHI_LENGTH))
-    test_data  = np.zeros((len(test_indices) ,RESIZED_HEIGHT,RESIZED_WIDTH,PHI_LENGTH))
+    # We now know dimensions of the datasets to use. HEIGHT BEFORE WIDTH!
+    train_data = np.zeros((len(train_indices),PHI_LENGTH,RESIZED_HEIGHT,RESIZED_WIDTH))
+    valid_data = np.zeros((len(valid_indices),PHI_LENGTH,RESIZED_HEIGHT,RESIZED_WIDTH))
+    test_data  = np.zeros((len(test_indices) ,PHI_LENGTH,RESIZED_HEIGHT,RESIZED_WIDTH))
     train_labels = np.zeros(len(train_indices))
     valid_labels = np.zeros(len(valid_indices))
     test_labels  = np.zeros(len(test_indices))
 
     for (i,v) in enumerate(train_indices):
-        train_data[i] = np.load(raw_data_dir+ "/phis/phi_" +v+ ".npy").transpose(1,2,0)
-        train_labels[i] = actions[int(v)]
+        train_data[i] = np.load(raw_data_dir+ "/phis/phi_" +v+ ".npy")
+        train_labels[i] = a_map[ actions[int(v)] ]
 
     for (i,v) in enumerate(valid_indices):
-        valid_data[i] = np.load(raw_data_dir+ "/phis/phi_" +v+ ".npy").transpose(1,2,0)
-        valid_labels[i] = actions[int(v)]
+        valid_data[i] = np.load(raw_data_dir+ "/phis/phi_" +v+ ".npy")
+        valid_labels[i] = a_map[ actions[int(v)] ]
 
     for (i,v) in enumerate(test_indices):
-        test_data[i] = np.load(raw_data_dir+ "/phis/phi_" +v+ ".npy").transpose(1,2,0)
-        test_labels[i] = actions[int(v)]
+        test_data[i] = np.load(raw_data_dir+ "/phis/phi_" +v+ ".npy")
+        test_labels[i] = a_map[ actions[int(v)] ]
 
     logger.info("Now saved information in {train,valid,test}.{data,labels} ...")
     logger.info("train_data,labels.shape: {} and {}".format(train_data.shape,train_labels.shape))
@@ -294,7 +304,7 @@ if __name__ == "__main__":
     # Second: subsample these to balance dataset and save into new arrays.
     indices = sample_indices(game_name, raw_data_dir)
     ratio = np.array([0.76, 0.04, 0.2])
-    create_test_valid_train(indices, ratio, raw_data_dir, final_data_dir)
+    create_test_valid_train(game_name, indices, ratio, raw_data_dir, final_data_dir)
 
     # A quick reminder at the end to save the log.
     logger.info("All done. Rename log.txt if you want to save the log." \
