@@ -1,7 +1,7 @@
 """
 Test theano to see if I can get stuff working.
-
 Based on code from Nathan Sprague's project.
+Modified by Daniel Seita
 """
 
 import numpy as np
@@ -10,13 +10,10 @@ import numpy as np
 import theano
 import theano.tensor as T
 import sys
-# from updates import deepmind_rmsprop
 
 
 class DeepQLearner:
-    """
-    Deep Q-learning network using Lasagne.
-    """
+    """ Deep Q-learning network using Lasagne. """
 
     def __init__(self, input_width, input_height, num_actions,
                  num_frames, discount, learning_rate, rho,
@@ -24,18 +21,10 @@ class DeepQLearner:
                  batch_size, network_type, update_rule,
                  batch_accumulator, rng, input_scale=255.0):
         """
-        TODO Document this
-
-        Note: I think input_scale is correct. My data is in the raw phi stuff, I
-        never changed that ...
-        
-        Be careful, there are several locations where I changed this to have 4
-        frames instead of 5. Also, I need to figure out if I can safely remove
-        'rewards' and 'terminals'. I really just want everything as simple as
-        possible!!
+        I think input_scale is correct. My data is in the raw phi stuff, I never
+        changed that. Be careful, there are several locations where I changed
+        this to have 4 frames instead of 5.
         """
-
-        # Daniel: straightforward
         self.input_width = input_width
         self.input_height = input_height
         self.num_actions = num_actions
@@ -50,7 +39,7 @@ class DeepQLearner:
         self.freeze_interval = freeze_interval
         self.rng = rng
 
-        # Daniel: can start building network now!
+        # Daniel: for Lasagne, we only need to pass the *output* layer.
         lasagne.random.set_rng(self.rng)
         self.update_counter = 0
         self.l_out = self.build_network(network_type, input_width, input_height,
@@ -90,6 +79,7 @@ class DeepQLearner:
             broadcastable=(False, True))
 
         # Shared variable for a single state, to calculate q_vals.
+        # Daniel: yes, this is good, it's ONE phi here.
         self.state_shared = theano.shared(
             np.zeros((num_frames, input_height, input_width),
                      dtype=theano.config.floatX))
@@ -114,6 +104,8 @@ class DeepQLearner:
         output = (q_vals * actionmask).sum(axis=1).reshape((-1, 1))
         diff = target - output
 
+        # Daniel: huh, are we really taking squared difference as the loss? I
+        # thought the cross entropy loss would be more appropriate.
         if self.clip_delta > 0:
             # If we simply take the squared clipped diff as our loss,
             # then the gradient will be zero whenever the diff exceeds
@@ -137,6 +129,8 @@ class DeepQLearner:
         else:
             raise ValueError("Bad accumulator: {}".format(batch_accumulator))
 
+        # Daniel: I think this is similar to the CS 294-129 homework where we
+        # can put all parameters in a dictionary. Convenient helper function!
         params = lasagne.layers.helper.get_all_params(self.l_out)  
         train_givens = {
             states: self.imgs_shared,
@@ -147,10 +141,7 @@ class DeepQLearner:
             actions: self.actions_shared,
             terminals: self.terminals_shared
         }
-        ### Daniel: IMPORTANT! I will be using 'normal' RMSProp.
-        ### if update_rule == 'deepmind_rmsprop':
-        ###     updates = deepmind_rmsprop(loss, params, self.lr, self.rho,
-        ###                                self.rms_epsilon)
+        # Daniel: I got rid of deep mind's rule.
         if update_rule == 'rmsprop':
             updates = lasagne.updates.rmsprop(loss, params, self.lr, self.rho,
                                               self.rms_epsilon)
@@ -163,11 +154,13 @@ class DeepQLearner:
             updates = lasagne.updates.apply_momentum(updates, None,
                                                      self.momentum)
 
-        # Daniel: interesting, IDK how this works, but it looks like the
-        # training method calls this. So it must save a function. I really wish
-        # I understood how theano and lasagne work.
+        # Daniel: This is a standard Theano function with nothing as input, loss
+        # as output, updates specified by the lasagne momentum variable, and the
+        # 'given' variables in Theano (I think this means the variables are part
+        # of the computation, but we don't want to take them as input).
         self._train = theano.function([], [loss], updates=updates,
                                       givens=train_givens)
+
         q_givens = {
             states: self.state_shared.reshape((1,
                                                self.num_frames,
@@ -206,6 +199,7 @@ class DeepQLearner:
 
 
     def q_vals(self, state):
+        """  TODO document  """
         self.state_shared.set_value(state)
         return self._q_vals()
 
@@ -222,6 +216,7 @@ class DeepQLearner:
 
 
     def reset_q_hat(self):
+        """  TODO document  """
         all_params = lasagne.layers.helper.get_all_param_values(self.l_out)
         lasagne.layers.helper.set_all_param_values(self.next_l_out, all_params)
 
@@ -229,32 +224,8 @@ class DeepQLearner:
     def build_network(self, network_type, input_width, input_height,
                       output_dim, num_frames, batch_size):
         """
-        TODO Document this. TODO ONLY USING NIPS FOR NOW ...
+        TODO Document this. ONLY USING NIPS FOR NOW ...
         """
-
-        """
-        if network_type == "nature_cuda":
-            return self.build_nature_network(input_width, input_height,
-                                             output_dim, num_frames, batch_size)
-        if network_type == "nature_dnn":
-            return self.build_nature_network_dnn(input_width, input_height,
-                                                 output_dim, num_frames,
-                                                 batch_size)
-        elif network_type == "nips_cuda":
-            return self.build_nips_network(input_width, input_height,
-                                           output_dim, num_frames, batch_size)
-        elif network_type == "nips_dnn":
-            return self.build_nips_network_dnn(input_width, input_height,
-                                               output_dim, num_frames,
-                                               batch_size)
-        elif network_type == "linear":
-            return self.build_linear_network(input_width, input_height,
-                                             output_dim, num_frames, batch_size)
-        else:
-            raise ValueError("Unrecognized network: {}".format(network_type))
-        """
-
-        # For now let's just assume we have the nips_dnn.
         return self.build_nips_network_dnn(input_width, input_height,
                                            output_dim, num_frames, batch_size)
 
@@ -262,20 +233,20 @@ class DeepQLearner:
     def build_nips_network_dnn(self, input_width, input_height, output_dim,
                                num_frames, batch_size):
         """
-        Build a network consistent with the 2013 NIPS paper.
-        Daniel: this is what's interesting. The input is num_frames. So why are
-        we having num_frames + 1 in other parts of this code?? I just want
-        something very simple: input is WHAT WE HAVE HERE, with num_frames (not
-        num_frames_+1) and the output is a set of probabilities for the actions
-        that we have. Come on!!!
+        Build a network consistent with the 2013 NIPS paper.  Daniel: this is
+        what's interesting. The input is num_frames. So why are we having
+        num_frames + 1 in other parts of this code?? Has to do with Q-Learning
+        and targets, but here I don't want to worry about that! PS: This is a
+        lot clearer after reading Theano and Lasagne documentation. Also,
+        really, they used the Gaussian initialization instead of He-style? [OH,
+        He wasn't introduced until 2014 ... never mind.] Finally, I think there
+        should be a softmax for the final layer.
         """
-        # Import it here, in case it isn't installed.
         from lasagne.layers import dnn
 
         l_in = lasagne.layers.InputLayer(
             shape=(None, num_frames, input_width, input_height)
         )
-
 
         l_conv1 = dnn.Conv2DDNNLayer(
             l_in,
@@ -308,9 +279,10 @@ class DeepQLearner:
             b=lasagne.init.Constant(.1)
         )
 
+        # Daniel: no softmax used here?!?
         l_out = lasagne.layers.DenseLayer(
             l_hidden1,
-            num_units=output_dim,
+            num_units=output_dim, # Daniel: i.e. number of actions.
             nonlinearity=None,
             #W=lasagne.init.HeUniform(),
             W=lasagne.init.Normal(.01),
@@ -320,9 +292,8 @@ class DeepQLearner:
         return l_out
 
 
-
 if __name__ == "__main__":
-    path = "/home/daniel/Algorithmic-HRI/final_data/breakout/"
+    path = "/Users/danielseita/Algorithmic-HRI/final_data/breakout/"
     train_data = np.load(path+ "train.data.npy").astype('float32')
     train_labels = np.load(path+ "train.labels.npy").astype('int32')
     valid_data = np.load(path+ "valid.data.npy").astype('float32')
@@ -384,216 +355,3 @@ if __name__ == "__main__":
         loss = net.train(data, actions, rewards, terminals)
         if i % 10 == 0:
             print("i={}, loss={}".format(i,loss))
-
-        """
-        if i % 50 == 0:
-            print("TODO figure out how to test on the validation set!!!")
-        """
-
-
-
-
-
-## Below we have three other network types, plus a linear one for sanity checks.
-## Keep this code here in case I want to test with them!
-
-##     def build_nature_network(self, input_width, input_height, output_dim,
-##                              num_frames, batch_size):
-##         """
-##         Build a large network consistent with the DeepMind Nature paper.
-##         """
-##         from lasagne.layers import cuda_convnet
-## 
-##         l_in = lasagne.layers.InputLayer(
-##             shape=(None, num_frames, input_width, input_height)
-##         )
-## 
-##         l_conv1 = cuda_convnet.Conv2DCCLayer(
-##             l_in,
-##             num_filters=32,
-##             filter_size=(8, 8),
-##             stride=(4, 4),
-##             nonlinearity=lasagne.nonlinearities.rectify,
-##             W=lasagne.init.HeUniform(), # Defaults to Glorot
-##             b=lasagne.init.Constant(.1),
-##             dimshuffle=True
-##         )
-## 
-##         l_conv2 = cuda_convnet.Conv2DCCLayer(
-##             l_conv1,
-##             num_filters=64,
-##             filter_size=(4, 4),
-##             stride=(2, 2),
-##             nonlinearity=lasagne.nonlinearities.rectify,
-##             W=lasagne.init.HeUniform(),
-##             b=lasagne.init.Constant(.1),
-##             dimshuffle=True
-##         )
-## 
-##         l_conv3 = cuda_convnet.Conv2DCCLayer(
-##             l_conv2,
-##             num_filters=64,
-##             filter_size=(3, 3),
-##             stride=(1, 1),
-##             nonlinearity=lasagne.nonlinearities.rectify,
-##             W=lasagne.init.HeUniform(),
-##             b=lasagne.init.Constant(.1),
-##             dimshuffle=True
-##         )
-## 
-##         l_hidden1 = lasagne.layers.DenseLayer(
-##             l_conv3,
-##             num_units=512,
-##             nonlinearity=lasagne.nonlinearities.rectify,
-##             W=lasagne.init.HeUniform(),
-##             b=lasagne.init.Constant(.1)
-##         )
-## 
-##         l_out = lasagne.layers.DenseLayer(
-##             l_hidden1,
-##             num_units=output_dim,
-##             nonlinearity=None,
-##             W=lasagne.init.HeUniform(),
-##             b=lasagne.init.Constant(.1)
-##         )
-## 
-##         return l_out
-## 
-## 
-##     def build_nature_network_dnn(self, input_width, input_height, output_dim,
-##                                  num_frames, batch_size):
-##         """
-##         Build a large network consistent with the DeepMind Nature paper.
-##         """
-##         from lasagne.layers import dnn
-## 
-##         l_in = lasagne.layers.InputLayer(
-##             shape=(None, num_frames, input_width, input_height)
-##         )
-## 
-##         l_conv1 = dnn.Conv2DDNNLayer(
-##             l_in,
-##             num_filters=32,
-##             filter_size=(8, 8),
-##             stride=(4, 4),
-##             nonlinearity=lasagne.nonlinearities.rectify,
-##             W=lasagne.init.HeUniform(),
-##             b=lasagne.init.Constant(.1)
-##         )
-## 
-##         l_conv2 = dnn.Conv2DDNNLayer(
-##             l_conv1,
-##             num_filters=64,
-##             filter_size=(4, 4),
-##             stride=(2, 2),
-##             nonlinearity=lasagne.nonlinearities.rectify,
-##             W=lasagne.init.HeUniform(),
-##             b=lasagne.init.Constant(.1)
-##         )
-## 
-##         l_conv3 = dnn.Conv2DDNNLayer(
-##             l_conv2,
-##             num_filters=64,
-##             filter_size=(3, 3),
-##             stride=(1, 1),
-##             nonlinearity=lasagne.nonlinearities.rectify,
-##             W=lasagne.init.HeUniform(),
-##             b=lasagne.init.Constant(.1)
-##         )
-## 
-##         l_hidden1 = lasagne.layers.DenseLayer(
-##             l_conv3,
-##             num_units=512,
-##             nonlinearity=lasagne.nonlinearities.rectify,
-##             W=lasagne.init.HeUniform(),
-##             b=lasagne.init.Constant(.1)
-##         )
-## 
-##         l_out = lasagne.layers.DenseLayer(
-##             l_hidden1,
-##             num_units=output_dim,
-##             nonlinearity=None,
-##             W=lasagne.init.HeUniform(),
-##             b=lasagne.init.Constant(.1)
-##         )
-## 
-##         return l_out
-## 
-## 
-## 
-##     def build_nips_network(self, input_width, input_height, output_dim,
-##                            num_frames, batch_size):
-##         """
-##         Build a network consistent with the 2013 NIPS paper.
-##         """
-##         from lasagne.layers import cuda_convnet
-##         l_in = lasagne.layers.InputLayer(
-##             shape=(None, num_frames, input_width, input_height)
-##         )
-## 
-##         l_conv1 = cuda_convnet.Conv2DCCLayer(
-##             l_in,
-##             num_filters=16,
-##             filter_size=(8, 8),
-##             stride=(4, 4),
-##             nonlinearity=lasagne.nonlinearities.rectify,
-##             #W=lasagne.init.HeUniform(c01b=True),
-##             W=lasagne.init.Normal(.01),
-##             b=lasagne.init.Constant(.1),
-##             dimshuffle=True
-##         )
-## 
-##         l_conv2 = cuda_convnet.Conv2DCCLayer(
-##             l_conv1,
-##             num_filters=32,
-##             filter_size=(4, 4),
-##             stride=(2, 2),
-##             nonlinearity=lasagne.nonlinearities.rectify,
-##             #W=lasagne.init.HeUniform(c01b=True),
-##             W=lasagne.init.Normal(.01),
-##             b=lasagne.init.Constant(.1),
-##             dimshuffle=True
-##         )
-## 
-##         l_hidden1 = lasagne.layers.DenseLayer(
-##             l_conv2,
-##             num_units=256,
-##             nonlinearity=lasagne.nonlinearities.rectify,
-##             #W=lasagne.init.HeUniform(),
-##             W=lasagne.init.Normal(.01),
-##             b=lasagne.init.Constant(.1)
-##         )
-## 
-##         l_out = lasagne.layers.DenseLayer(
-##             l_hidden1,
-##             num_units=output_dim,
-##             nonlinearity=None,
-##             #W=lasagne.init.HeUniform(),
-##             W=lasagne.init.Normal(.01),
-##             b=lasagne.init.Constant(.1)
-##         )
-## 
-##         return l_out
-## 
-## 
-## 
-##     def build_linear_network(self, input_width, input_height, output_dim,
-##                              num_frames, batch_size):
-##         """
-##         Build a simple linear learner.  Useful for creating
-##         tests that sanity-check the weight update code.
-##         """
-## 
-##         l_in = lasagne.layers.InputLayer(
-##             shape=(None, num_frames, input_width, input_height)
-##         )
-## 
-##         l_out = lasagne.layers.DenseLayer(
-##             l_in,
-##             num_units=output_dim,
-##             nonlinearity=None,
-##             W=lasagne.init.Constant(0.0),
-##             b=None
-##         )
-## 
-##         return l_out
