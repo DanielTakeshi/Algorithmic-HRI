@@ -26,7 +26,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 import lasagne
-
+from lasagne.regularization import l2, l1
 
 def load_datasets(path):
     """ 
@@ -85,8 +85,8 @@ def build_nips_network_dnn(input_var, input_width, input_height, output_dim,
         filter_size=(8, 8),
         stride=(4, 4),
         nonlinearity=lasagne.nonlinearities.rectify,
-        #W=lasagne.init.HeUniform(),
-        W=lasagne.init.Normal(.01),
+        W=lasagne.init.HeUniform(),
+        #W=lasagne.init.Normal(.01),
         b=lasagne.init.Constant(.1)
     )
 
@@ -96,8 +96,8 @@ def build_nips_network_dnn(input_var, input_width, input_height, output_dim,
         filter_size=(4, 4),
         stride=(2, 2),
         nonlinearity=lasagne.nonlinearities.rectify,
-        #W=lasagne.init.HeUniform(),
-        W=lasagne.init.Normal(.01),
+        W=lasagne.init.HeUniform(),
+        #W=lasagne.init.Normal(.01),
         b=lasagne.init.Constant(.1)
     )
 
@@ -105,8 +105,8 @@ def build_nips_network_dnn(input_var, input_width, input_height, output_dim,
         l_conv2,
         num_units=256,
         nonlinearity=lasagne.nonlinearities.rectify,
-        #W=lasagne.init.HeUniform(),
-        W=lasagne.init.Normal(.01),
+        W=lasagne.init.HeUniform(),
+        #W=lasagne.init.Normal(.01),
         b=lasagne.init.Constant(.1)
     )
 
@@ -115,17 +115,17 @@ def build_nips_network_dnn(input_var, input_width, input_height, output_dim,
         l_hidden1,
         num_units=output_dim, # Daniel: i.e. number of actions.
         nonlinearity=lasagne.nonlinearities.softmax, # Daniel: spragnur had this as None
-        #W=lasagne.init.HeUniform(),
-        W=lasagne.init.Normal(.01),
+        W=lasagne.init.HeUniform(),
+        #W=lasagne.init.Normal(.01),
         b=lasagne.init.Constant(.1)
     )
     return l_out
 
 
 
-def main(num_epochs=10, batch_size=32):
+def main(reg_type='l1', reg=0.0, num_epochs=100, batch_size=32, batches_per_epoch=None):
     """ Runs the whole pipeline. """
-    path = "/Users/danielseita/Algorithmic-HRI/final_data/breakout/"
+    path = "/home/daniel/Algorithmic-HRI/final_data/breakout/"
     X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
 
     # Prepare Theano variables for inputs and targets
@@ -141,17 +141,23 @@ def main(num_epochs=10, batch_size=32):
                                      num_frames=4, 
                                      batch_size=batch_size)
     print("Finished builing the network.")
+    params = lasagne.layers.get_all_params(network, trainable=True)
 
     # Create a loss expression for training, i.e., a scalar objective we want to
     # minimize (for our multi-class problem, it is the cross-entropy loss):
+    # Then add regularize_network_params (NOT regularize_layer_params!!).
     prediction = lasagne.layers.get_output(network)
     loss = lasagne.objectives.categorical_crossentropy(prediction,target_var)
     loss = loss.mean()
-    # We could add some weight decay as well here, see lasagne.regularization.
+    if (reg_type == 'l1'):
+        loss = loss + reg*lasagne.regularization.regularize_network_params(network,l1)
+    elif (reg_type == 'l2'):
+        loss = loss + reg*lasagne.regularization.regularize_network_params(network,l2)
+    else:
+        raise ValueError("reg_type={} is not suported".format(reg_type))
 
-    # Create update expressions for training, i.e., how to modify the
-    # parameters at each training step. Daniel: I'm using rmsprop.
-    params = lasagne.layers.get_all_params(network, trainable=True)
+    # Create update expressions for training, i.e., how to modify the parameters
+    # at each training step. Daniel: I'm using rmsprop.
     lr = 0.0002
     rho = 0.99
     rms_epsilon = 1e-6
@@ -162,6 +168,12 @@ def main(num_epochs=10, batch_size=32):
     test_prediction = lasagne.layers.get_output(network, deterministic=True)
     test_loss = lasagne.objectives.categorical_crossentropy(test_prediction,target_var)
     test_loss = test_loss.mean()
+    if (reg_type == 'l1'):
+        test_loss = test_loss + reg*lasagne.regularization.regularize_network_params(network,l1)
+    elif (reg_type == 'l2'):
+        test_loss = test_loss + reg*lasagne.regularization.regularize_network_params(network,l2)
+    else:
+        raise ValueError("reg_type={} is not suported".format(reg_type))
     # As a bonus, also create an expression for the classification accuracy:
     test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), target_var),
                       dtype=theano.config.floatX)
@@ -173,9 +185,12 @@ def main(num_epochs=10, batch_size=32):
     # Compile a second function for validation (with no parameter updates).
     val_fn = theano.function([input_var, target_var], [test_loss, test_acc])
 
-    # In each epoch, we do a full pass over the training data:
+    # In each epoch, we do a full pass over the training data.
+    # Daniel: can also change this to see validation performance more often.
     print("Starting training...")
+
     for epoch in range(num_epochs):
+        # This will do the training, with train_fn called (with weight updates).
         train_err = 0
         train_batches = 0
         start_time = time.time()
@@ -183,6 +198,19 @@ def main(num_epochs=10, batch_size=32):
             inputs, targets = batch
             train_err += train_fn(inputs, targets)
             train_batches += 1
+            if batches_per_epoch != None and train_batches == batches_per_epoch:
+                break
+
+        # Training accuracy (I'm just curious). Must use val_fn so weights are same.
+        train2_err = 0
+        train2_acc = 0
+        train2_batches = 0
+        for batch in iterate_minibatches(X_train, y_train, batch_size, shuffle=False):
+            inputs, targets = batch
+            err, acc = val_fn(inputs, targets)
+            train2_err += err
+            train2_acc += acc
+            train2_batches += 1
 
         # And a full pass over the validation data:
         val_err = 0
@@ -195,13 +223,13 @@ def main(num_epochs=10, batch_size=32):
             val_acc += acc
             val_batches += 1
 
-        # Then we print the results for this epoch:
+        # Then we print the results for this epoch only (not a moving average):
         print("Epoch {} of {} took {:.3f}s".format(
             epoch + 1, num_epochs, time.time() - start_time))
         print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
+        print("  training accuracy:\t\t{:.2f} %".format(train2_acc / train2_batches * 100))
         print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
-        print("  validation accuracy:\t\t{:.2f} %".format(
-            val_acc / val_batches * 100))
+        print("  validation accuracy:\t\t{:.2f} %".format(val_acc / val_batches * 100))
 
     # After training, we compute and print the test error:
     test_err = 0
@@ -227,4 +255,4 @@ def main(num_epochs=10, batch_size=32):
 
 
 if __name__ == "__main__":
-    main()
+    main(reg_type='l1', reg=0.001, num_epochs=20, batch_size=32, batches_per_epoch=None)
