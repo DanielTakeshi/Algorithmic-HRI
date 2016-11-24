@@ -21,3 +21,17 @@ def rgb2gray(rgb):
     components, weighted according to these tuned values.
     """
     return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+
+def analyze_model_files(model_file_path):
+    """ Analyze model files. I'll put this here for now. """
+    directories = [x for x in os.listdir(model_file_path) if x[:5]=='stats']
+    test_loss_accs = []
+    for d in directories:
+        array = np.load(model_file_path + d)
+        test_loss_accs.append((d, array['test_loss_acc'][0], array['test_loss_acc'][1]))
+    sorted_scores = sorted(test_loss_accs, key=lambda x:x[2])
+    for item in sorted_scores:
+        print(item)
+
+if __name__ == "__main__":
+    analyze_model_files('qnet_output/')
