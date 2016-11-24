@@ -14,6 +14,12 @@ and will get called upon whenever we have to decide on random actions.
 TODO LONG TERM: may want to figure out ways I can add more parameters, etc.,
 better get a full pipeline for coding down. But I think that's longer-term.
 
+Note: In spragnur's DQN code, load network weights like this:
+
+    with np.load('model.npz') as f:
+        param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+    lasagne.layers.set_all_param_values(network, param_values)
+
 (c) December 2016 by Daniel Seita, heavily based off of spragnur's code and the
 Lasagne tutorial.
 """
@@ -27,6 +33,7 @@ import theano
 import theano.tensor as T
 import lasagne
 from lasagne.regularization import l2, l1
+from tempfile import TemporaryFile
 
 def load_datasets(path):
     """ 
@@ -85,8 +92,8 @@ def build_nips_network_dnn(input_var, input_width, input_height, output_dim,
         filter_size=(8, 8),
         stride=(4, 4),
         nonlinearity=lasagne.nonlinearities.rectify,
-        W=lasagne.init.HeUniform(),
-        #W=lasagne.init.Normal(.01),
+        #W=lasagne.init.HeUniform(),
+        W=lasagne.init.Normal(.01),
         b=lasagne.init.Constant(.1)
     )
 
@@ -96,8 +103,8 @@ def build_nips_network_dnn(input_var, input_width, input_height, output_dim,
         filter_size=(4, 4),
         stride=(2, 2),
         nonlinearity=lasagne.nonlinearities.rectify,
-        W=lasagne.init.HeUniform(),
-        #W=lasagne.init.Normal(.01),
+        #W=lasagne.init.HeUniform(),
+        W=lasagne.init.Normal(.01),
         b=lasagne.init.Constant(.1)
     )
 
@@ -105,8 +112,8 @@ def build_nips_network_dnn(input_var, input_width, input_height, output_dim,
         l_conv2,
         num_units=256,
         nonlinearity=lasagne.nonlinearities.rectify,
-        W=lasagne.init.HeUniform(),
-        #W=lasagne.init.Normal(.01),
+        #W=lasagne.init.HeUniform(),
+        W=lasagne.init.Normal(.01),
         b=lasagne.init.Constant(.1)
     )
 
@@ -115,16 +122,20 @@ def build_nips_network_dnn(input_var, input_width, input_height, output_dim,
         l_hidden1,
         num_units=output_dim, # Daniel: i.e. number of actions.
         nonlinearity=lasagne.nonlinearities.softmax, # Daniel: spragnur had this as None
-        W=lasagne.init.HeUniform(),
-        #W=lasagne.init.Normal(.01),
+        #W=lasagne.init.HeUniform(),
+        W=lasagne.init.Normal(.01),
         b=lasagne.init.Constant(.1)
     )
     return l_out
 
 
 
-def main(reg_type='l1', reg=0.0, num_epochs=100, batch_size=32, batches_per_epoch=None):
-    """ Runs the whole pipeline. """
+def main(reg_type='l1', reg=0.0, num_epochs=100, batch_size=32,
+         out_dir='qnet_output'):
+    """ 
+    Runs the whole pipeline. Can call this multiple times during process of
+    hyperparameter tuning.
+    """
     path = "/home/daniel/Algorithmic-HRI/final_data/breakout/"
     X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
 
@@ -180,14 +191,18 @@ def main(reg_type='l1', reg=0.0, num_epochs=100, batch_size=32, batches_per_epoc
 
     # Compile a function performing a training step on a mini-batch (by giving
     # the updates dictionary) and returning the corresponding training loss:
+    # Also compile a second function for validation (with no parameter updates).
     train_fn = theano.function([input_var, target_var], loss, updates=updates)
-
-    # Compile a second function for validation (with no parameter updates).
     val_fn = theano.function([input_var, target_var], [test_loss, test_acc])
 
     # In each epoch, we do a full pass over the training data.
     # Daniel: can also change this to see validation performance more often.
     print("Starting training...")
+    train_losses = []
+    train_accs = []
+    valid_losses = []
+    valid_accs = []
+    train_times = []
 
     for epoch in range(num_epochs):
         # This will do the training, with train_fn called (with weight updates).
@@ -198,8 +213,7 @@ def main(reg_type='l1', reg=0.0, num_epochs=100, batch_size=32, batches_per_epoc
             inputs, targets = batch
             train_err += train_fn(inputs, targets)
             train_batches += 1
-            if batches_per_epoch != None and train_batches == batches_per_epoch:
-                break
+        train_time = time.time() - start_time
 
         # Training accuracy (I'm just curious). Must use val_fn so weights are same.
         train2_err = 0
@@ -224,12 +238,21 @@ def main(reg_type='l1', reg=0.0, num_epochs=100, batch_size=32, batches_per_epoc
             val_batches += 1
 
         # Then we print the results for this epoch only (not a moving average):
-        print("Epoch {} of {} took {:.3f}s".format(
-            epoch + 1, num_epochs, time.time() - start_time))
-        print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
-        print("  training accuracy:\t\t{:.2f} %".format(train2_acc / train2_batches * 100))
-        print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
-        print("  validation accuracy:\t\t{:.2f} %".format(val_acc / val_batches * 100))
+        # The train_loss is the average train loss over all minibatches, etc.
+        train_loss = train_err / train_batches
+        train_acc = train2_acc / train2_batches * 100
+        valid_loss = val_err / val_batches
+        valid_acc = val_acc / val_batches * 100
+        print("Epoch {} of {}, training took {:.3f}s".format(epoch+1,num_epochs,train_time))
+        print("  training loss:\t\t{:.6f}".format(train_loss))
+        print("  training accuracy:\t\t{:.2f} %".format(train_acc))
+        print("  validation loss:\t\t{:.6f}".format(valid_loss))
+        print("  validation accuracy:\t\t{:.2f} %".format(valid_acc))
+        train_losses.append(train_loss)
+        train_accs.append(train_acc)
+        valid_losses.append(valid_loss)
+        valid_accs.append(valid_acc)
+        train_times.append(train_time)
 
     # After training, we compute and print the test error:
     test_err = 0
@@ -241,18 +264,28 @@ def main(reg_type='l1', reg=0.0, num_epochs=100, batch_size=32, batches_per_epoc
         test_err += err
         test_acc += acc
         test_batches += 1
+    test_loss = test_err/test_batches
+    test_acc = test_acc/test_batches * 100
     print("Final results:")
-    print("  test loss:\t\t\t{:.6f}".format(test_err/test_batches))
-    print("  test accuracy:\t\t{:.2f} %".format(test_acc/test_batches * 100))
-
-    # Optionally, you could now dump the network weights to a file like this:
-    # np.savez('model.npz', *lasagne.layers.get_all_param_values(network))
-    #
-    # And load them again later on like this:
-    # with np.load('model.npz') as f:
-    #     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-    # lasagne.layers.set_all_param_values(network, param_values)
-
+    print("  test loss:\t\t\t{:.6f}".format(test_loss))
+    print("  test accuracy:\t\t{:.2f} %".format(test_acc))
+    
+    # Save statistics and dump the network weights to (two) files, w/keywords.
+    stem = reg_type+ '_' +str(reg)+ '_epochs_' +str(num_epochs)+ '_bsize_' \
+           +str(batch_size)
+    np.savez(out_dir+'stats_'+stem, train_losses=train_losses,
+                                      train_accs=train_accs, 
+                                      valid_losses=valid_losses,
+                                      valid_accs=valid_accs,
+                                      train_times=train_times,
+                                      test_loss_acc=[test_loss,test_acc])
+    np.savez(out_dir+'model_'+stem, *lasagne.layers.get_all_param_values(network))
+    
 
 if __name__ == "__main__":
-    main(reg_type='l1', reg=0.001, num_epochs=20, batch_size=32, batches_per_epoch=None)
+    out = 'qnet_output/'
+    regs = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-1]
+    for r in regs:
+        main(reg_type='l1', reg=r, num_epochs=50, batch_size=32, out_dir=out)
+        main(reg_type='l2', reg=r, num_epochs=50, batch_size=32, out_dir=out)
+    print("\nWhew! All done with everything.")
