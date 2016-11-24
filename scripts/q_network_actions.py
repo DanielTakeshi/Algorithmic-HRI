@@ -33,7 +33,7 @@ import theano
 import theano.tensor as T
 import lasagne
 from lasagne.regularization import l2, l1
-from tempfile import TemporaryFile
+
 
 def load_datasets(path):
     """ 
@@ -130,15 +130,12 @@ def build_nips_network_dnn(input_var, input_width, input_height, output_dim,
 
 
 
-def main(reg_type='l1', reg=0.0, num_epochs=100, batch_size=32,
-         out_dir='qnet_output'):
+def main(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1', reg=0,
+            num_epochs=100, batch_size=32, out_dir='qnet_out'):
     """ 
     Runs the whole pipeline. Can call this multiple times during process of
     hyperparameter tuning.
     """
-    path = "/home/daniel/Algorithmic-HRI/final_data/breakout/"
-    X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
-
     # Prepare Theano variables for inputs and targets
     input_var = T.tensor4('inputs')
     target_var = T.ivector('targets')
@@ -283,9 +280,17 @@ def main(reg_type='l1', reg=0.0, num_epochs=100, batch_size=32,
     
 
 if __name__ == "__main__":
+    path = "/home/daniel/Algorithmic-HRI/final_data/breakout/"
+    X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
+
     out = 'qnet_output/'
-    regs = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-1]
+    regs = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
     for r in regs:
-        main(reg_type='l1', reg=r, num_epochs=50, batch_size=32, out_dir=out)
-        main(reg_type='l2', reg=r, num_epochs=50, batch_size=32, out_dir=out)
+        print("\nCurrently on regularization r={}".format(r))
+        print("L1 regularization.\n")
+        main(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1',
+                reg=r, num_epochs=50, batch_size=32, out_dir=out)
+        print("\n Now L2 regularization.\n")
+        main(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l2',
+                reg=r, num_epochs=50, batch_size=32, out_dir=out)
     print("\nWhew! All done with everything.")
