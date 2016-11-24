@@ -33,6 +33,7 @@ import theano
 import theano.tensor as T
 import lasagne
 from lasagne.regularization import l2, l1
+import utilities
 
 
 def load_datasets(path):
@@ -283,14 +284,14 @@ if __name__ == "__main__":
     path = "/home/daniel/Algorithmic-HRI/final_data/breakout/"
     X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
 
-    # Careful! I don't have code to create the directory if it doesn't exist!
     out = 'qnet_output/'
+    utilities.make_path_check_exists(out)
     regs = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
     for r in regs:
         print("\nCurrently on regularization r={}".format(r))
         print("L1 regularization.\n")
         main(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1',
-                reg=r, num_epochs=50, batch_size=32, out_dir=out)
+                reg=r, num_epochs=30, batch_size=32, out_dir=out)
         print("\n Now L2 regularization.\n")
         main(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l2',
                 reg=r, num_epochs=30, batch_size=32, out_dir=out)
