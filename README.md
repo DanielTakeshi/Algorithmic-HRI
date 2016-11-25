@@ -51,4 +51,16 @@ This documentation is [for the code here](https://github.com/DanielTakeshi/deep_
 
 The above *should* list exhaustively the changes I made. I hope I didn't forget anything.
 
-(2) Experiment protocol: for now, just use `results.csv` from spragnur's code. However, I'll want to better understand it and see if there are other ways I can plot results. Ideally I will use the NATURE code, not the NIPS code, but for time constraints I may have to use the NIPS code.
+(2) The default code from spragnur produces a `results.csv` file, of which the first five lines may look like:
+
+```
+epoch,num_episodes,total_reward,reward_per_epoch,mean_q
+1,63,62,0.984126984127,0.084294614559
+2,34,0,0.0,0.0975618274463
+3,62,67,1.08064516129,0.128791995049
+4,58,84,1.44827586207,0.113572772667
+```
+
+In each row, the first number is the epoch. In supervised learning, an epoch is one full pass over the dataset, but in reinforcement learning, an epoch is ambiguous. In his code, spragnur defined it as 50000 "steps" (in the NIPS version), so we'll just refer to an epoch as consisting of some total number of steps. The `ale_experiment.py` code, which gets called to run the experiment, contains a `run_epoch` method with a while loop that executes until we've exceeded the number of steps.
+
+(3) Experiment protocol: for now, just use `results.csv` from spragnur's code. However, I'll want to better understand it and see if there are other ways I can plot results. Ideally I will use the NATURE code, not the NIPS code, but for time constraints I may have to use the NIPS code.
