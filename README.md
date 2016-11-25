@@ -61,6 +61,10 @@ epoch,num_episodes,total_reward,reward_per_epoch,mean_q
 4,58,84,1.44827586207,0.113572772667
 ```
 
-In each row, the first number is the epoch. In supervised learning, an epoch is one full pass over the dataset, but in reinforcement learning, an epoch is ambiguous. In his code, spragnur defined it as 50000 "steps" (in the NIPS version), so we'll just refer to an epoch as consisting of some total number of steps. The `ale_experiment.py` code, which gets called to run the experiment, contains a `run_epoch` method with a while loop that executes until we've exceeded the number of steps.
+In each row, the first number is the epoch. In supervised learning, an epoch is one full pass over the dataset, but in reinforcement learning, an epoch is ambiguous. In his code, spragnur defined it as 50000 "steps" (in the NIPS version), so we'll just refer to an epoch as consisting of some total number of steps. The `ale_experiment.py` code gets called to run the experiment using the `run` method. That method contains a call to a `run_epoch` method (followed by a testing epoch) with a while loop that executes until we've exceeded the number of steps. The while loop calls its `run_episode` method with two parameters: the number of steps left, and whether it's testing/training, and the `run_episode` method initializes the episode and then keeps playing it (calls its own `_step` method) until the max steps has exceeded (or more commonly, if the ALE indicates it's game over).
 
 (3) Experiment protocol: for now, just use `results.csv` from spragnur's code. However, I'll want to better understand it and see if there are other ways I can plot results. Ideally I will use the NATURE code, not the NIPS code, but for time constraints I may have to use the NIPS code.
+
+Reminders:
+
+- Keep separate `deep_q_rl` and `deel_q_rl_old` directories. The former is my current version, forked from spragnur's code. The latter is spragnur's code, untouched from his most recent version (though he hasn't updated in a long time). 
