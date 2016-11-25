@@ -1,6 +1,6 @@
 # Algorithmic-HRI
 
-My final project for CS 294-115. The main idea is to use DQN but boost it with human data. Specifically, when the Q-Learning policy asks us to take a random action, we will usually (but not always, more on that later) take an action that is instead chosen by a previously trained classifier which maps from sequences of game frames (i.e. states) to actions. The classifier was trained on HUMAN data from my own gameplay, which should presumably be better than selecting random actions. The revised DQN code is in my other repository, which was forked from spragnur's version: https://github.com/DanielTakeshi/deep_q_rl.
+My final project for CS 294-115. The main idea is to use DQN but boost it with human data. Specifically, when the Q-Learning policy asks us to take a random action, we will usually (but not always, more on that later) take an action that is instead chosen by a previously trained classifier which maps from sequences of game frames (i.e. states) to actions. The classifier was trained on HUMAN data from my own gameplay, which should presumably be better than selecting random actions. The revised DQN code is in my other repository, which was forked from [spragnur's version](https://github.com/DanielTakeshi/deep_q_rl).
 
 Make sure to follow these steps carefully!!! There's a lot of places in the pipeline where it's easy to make a mistake. The high level idea of this code is as follows: first the human plays Atari games to gather data in the form of (game frames, action), where the game frames are really four "consecutive", non-skipped frames. Then we train a neural network to classify from game frames to actions. Then we finally plug it inside a DQN learner, so that during the exploration phase, instead of playing random actions, we play the action that the classifier tells us to play based on the current game state. The hope is that this will boost early performance.
 
@@ -39,7 +39,7 @@ The other script in this directory is `scripts/utilities.py` but that's for cont
 
 # Incorporating the Classifier into DQN
 
-This documentation is for the code here: https://github.com/DanielTakeshi/deep_q_rl; I am putting things here to keep it centralized.
+This documentation is [for the code here](https://github.com/DanielTakeshi/deep_q_rl), but I am putting things here to keep it centralized.
 
 (1) The revised DQN code is heavily based on spragnur's code, with the following changes:
 
