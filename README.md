@@ -39,4 +39,16 @@ The other script in this directory is `scripts/utilities.py` but that's for cont
 
 # Incorporating the Classifier into DQN
 
-IN PROGRESS
+This documentation is for the code here: https://github.com/DanielTakeshi/deep_q_rl; I am putting things here to keep it centralized.
+
+(1) The revised DQN code is heavily based on spragnur's code, with the following changes:
+
+- The `run_nips.py`, `run_nature.py`, and `launcher.py` scripts now contain settings for my new human net. In particular, `launcher.py` contains a call to the `HumanQNetwork` class to contain this new network trained on human data (saved in `.npz` format). This network will, of course, not be modified in any form during the training run. Also, the launcher contains a dictionary which will map from consecutive integer numbers to another set of integers, which *then* get mapped to the appropriate actions as determined from `ale.getMinimalActionSet()`. For details on what action indices correspond to what, see [here](https://github.com/mgbellemare/Arcade-Learning-Environment/blob/master/doc/java-agent/code/src/ale/io/Actions.java) or the ALE documentation manual. In particular, RIGHT=3 and LEFT=4, but in my neural network code, I put in RIGHT=2 and LEFT=1. Watch out! Also, spragnur's code handles the action mapping by using the list from `ale.getMinimalActionSet()` which peforms the mapping, e.g. for Breakout it's [0 1 3 4]. Anyway, this "Human Q-Network" gets passed into the NeuralAgent class so it can call it as necessary.
+- `make_net.py` is a new script which creates the different neural network variants. I did this because ideally the human nets and the Q-network nets have the same structure.
+- `human_q_net.py` is another new script which creates the human network class and contains code for initializing the weights as soon as it is created.
+- The `q_network.py` code has been simplified to put the neural network code construction inside `make_net.py`.
+- The human network gets incorporated in the DQN code via `ale_agent.py`, specifically inside the crucial `_choose_action` method. There's documentation there which should make it clear. In particular, one important point is that I am using epsilon = 0.1 as the probability for a random action throughout the ENTIRE training run. For the other "90 percent", that value will degrade linearly from all human network actions to all Q-network actions. I keep the random action percentage at 0.1 so that actions such as FIRE, which only occur rarely (in Breakout, it should happen exactly 5 times per game unless one is pressing FIRE for no reason) can be played in practice, preventing such situations from having to be hard-coded.
+
+The above *should* list exhaustively the changes I made. I hope I didn't forget anything.
+
+(2) Experiment protocol: for now, just use `results.csv` from spragnur's code. However, I'll want to better understand it and see if there are other ways I can plot results. Ideally I will use the NATURE code, not the NIPS code, but for time constraints I may have to use the NIPS code.
