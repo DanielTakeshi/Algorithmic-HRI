@@ -80,7 +80,7 @@ Other notes: after every *training* epoch, we save the network file in pickle fo
 Reminders:
 
 - Use NATURE over NIPS whenever possible.
-- Try to save the logging file somewhere. During training, each time it prints out updates, that's because a new episode is about to begin.
+- Be sure to save the log files somewhere, probably in the results folder. The log files contain the output from the Python logger. They are indexed by the same timing convention as the pickle files. Don't delete them!
 - What about increasing the number of steps for testing? Instead of 10000, we can double it to 20000, so we get a better sense of the average reward per epoch?
 - Keep separate `deep_q_rl` and `deel_q_rl_old` directories. The former is my current version, forked from spragnur's code. The latter is spragnur's code, untouched from his most recent version (though he hasn't updated in a long time). I need to make sure that my forked version which IGNORES the human net is essentially equivalent to spragnur's raw version.
 - To make the game non-deterministic, use MAX_START_NULL_OPS to be some non-zero value (e.g. say 20), but this will probably be game-dependent. For Breakout, it's OK to set to this to be higher, but Pong may need this to be smaller. Actually wait, for Breakout I don't think it matters at all.
