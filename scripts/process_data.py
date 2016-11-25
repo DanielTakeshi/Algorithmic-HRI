@@ -58,12 +58,15 @@ RESIZED_WIDTH = 84
 CROP_OFFSET = 8 # Breakout
 
 
-def frame_skipping(num_frames):
+def frame_skipping(num_frames, openai_style=False):
     """ Frame skips, done in a stochastic manner (2,3,4) just like OpenAI. AFTER
     this is done, we then use history (e.g. phi) based only on these indices.
+
+    UPDATE: Never mind, let's just do it by 4 to be consistent with spragnur.
     
     Args:
         num_frames: The total number of frames in a particular game.
+
     Returns:
         An array of subsampled indices. These are the indices that we want to
         use (and therefore not skip). The first few frames are stored but the
@@ -74,7 +77,9 @@ def frame_skipping(num_frames):
     last_index = 0
     while last_index < num_frames:
         nonskipped.append(last_index)
-        skip = random.randint(2,4)
+        skip = 4
+        if openai_style:
+            skip = random.randint(2,4)
         last_index += skip
     return np.array(nonskipped)
 
@@ -135,7 +140,7 @@ def downsample_all(game_name, output_dir, raw_data_dir):
             open(game_dir+'/rewards.txt', 'r') as f_rewards:
 
             # First, get number of frames and subsample from them, skipping
-            # intervals of 2, 3, and 4 (at random). Exclude starting few frames.
+            # intervals of 4 (or it could be 2, 3, and 4 (at random)).
             actions_raw = np.array(f_actions.readlines())
             rewards_raw = np.array(f_rewards.readlines())
             assert len(actions_raw) == len(rewards_raw)
