@@ -272,11 +272,11 @@ def main(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1', reg=0,
     stem = reg_type+ '_' +str(reg)+ '_epochs_' +str(num_epochs)+ '_bsize_' \
            +str(batch_size)
     np.savez(out_dir+'stats_'+stem, train_losses=train_losses,
-                                      train_accs=train_accs, 
-                                      valid_losses=valid_losses,
-                                      valid_accs=valid_accs,
-                                      train_times=train_times,
-                                      test_loss_acc=[test_loss,test_acc])
+                                    train_accs=train_accs, 
+                                    valid_losses=valid_losses,
+                                    valid_accs=valid_accs,
+                                    train_times=train_times,
+                                    test_loss_acc=[test_loss,test_acc])
     np.savez(out_dir+'model_'+stem, *lasagne.layers.get_all_param_values(network))
     
 
@@ -284,10 +284,9 @@ if __name__ == "__main__":
     path = "/home/daniel/Algorithmic-HRI/final_data/breakout/"
     X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
 
-    out = 'tmp/'
+    out = 'qnet_output/'
     utilities.make_path_check_exists(out)
-    #regs = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
-    regs = [5e-3, 1e-2]
+    regs = [5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2]
     for r in regs:
         print("\nCurrently on regularization r={}".format(r))
         print("L1 regularization.\n")

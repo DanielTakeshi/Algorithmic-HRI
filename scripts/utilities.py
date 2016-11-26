@@ -26,11 +26,20 @@ def analyze_model_files(model_file_path):
     """ Analyze model files. I'll put this here for now. """
     directories = [x for x in os.listdir(model_file_path) if x[:5]=='stats']
     test_loss_accs = []
+    valid_loss_accs = []
+
     for d in directories:
         array = np.load(model_file_path + d)
         test_loss_accs.append((d, array['test_loss_acc'][0], array['test_loss_acc'][1]))
+        valid_loss_accs.append((d, array['valid_losses'][-1], array['valid_accs'][-1]))
+
     sorted_scores = sorted(test_loss_accs, key=lambda x:x[2])
+    print("Sorted by test scores:")
     for item in sorted_scores:
+        print(item)
+    sorted_valids = sorted(valid_loss_accs, key=lambda x:x[2])
+    print("Sorted by valid scores:")
+    for item in sorted_valids:
         print(item)
 
 if __name__ == "__main__":
