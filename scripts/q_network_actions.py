@@ -131,8 +131,8 @@ def build_nips_network_dnn(input_var, input_width, input_height, output_dim,
 
 
 
-def main(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1', reg=0,
-            num_epochs=100, batch_size=32, out_dir='qnet_out'):
+def do_training(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1',
+                reg=0, num_epochs=100, batch_size=32, out_dir='qnet_out'):
     """ 
     Runs the whole pipeline. Can call this multiple times during process of
     hyperparameter tuning.
@@ -278,9 +278,9 @@ def main(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1', reg=0,
                                     train_times=train_times,
                                     test_loss_acc=[test_loss,test_acc])
     np.savez(out_dir+'model_'+stem, *lasagne.layers.get_all_param_values(network))
-    
 
-if __name__ == "__main__":
+
+def train():
     path = "/home/daniel/Algorithmic-HRI/final_data/breakout/"
     X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
 
@@ -290,9 +290,68 @@ if __name__ == "__main__":
     for r in regs:
         print("\nCurrently on regularization r={}".format(r))
         print("L1 regularization.\n")
-        main(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1',
+        do_training(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1',
                 reg=r, num_epochs=30, batch_size=32, out_dir=out)
         print("\n Now L2 regularization.\n")
-        main(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l2',
+        do_training(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l2',
                 reg=r, num_epochs=30, batch_size=32, out_dir=out)
     print("\nWhew! All done with everything.")
+
+
+def sandbox_test():
+    """ Sandbox testing, so I can analyze output, provide examples in a paper,
+    etc. Needs to build the same network and load weights. If I'm using the
+    November 26-th version, this should result in 86.41% accuracy on the full
+    testing data.
+    """
+    path = "final_data/breakout/"
+    model_file = "qnet_output/model_l1_0.0005_epochs_30_bsize_32.npz"
+    out = "tmp/"
+    batch_size = 32
+
+    X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
+    utilities.make_path_check_exists(out)
+
+    # Now try to replicate the training method in re-generating the network.
+    # This is obviously breakout-spefici and we're hard-coding many numbers.
+    input_var = T.tensor4('inputs')
+    target_var = T.ivector('targets')
+    network = build_nips_network_dnn(input_var=input_var,
+                                     input_width=84, 
+                                     input_height=84, 
+                                     output_dim=3,
+                                     num_frames=4, 
+                                     batch_size=batch_size)
+    print("Finished builing the network.")
+    with np.load(model_file) as f:
+        param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+    lasagne.layers.set_all_param_values(network, param_values)
+
+    # The 'network' has weights loaded, so we can get last layer and predict.
+    # The final layer contains the softmax values, so take the arg-max.
+    final_layer = lasagne.layers.get_output(network, deterministic=True)
+    acc = T.mean(T.eq(T.argmax(final_layer, axis=1), target_var),
+                      dtype=theano.config.floatX)
+    val_fn = theano.function([input_var, target_var], [acc, final_layer])
+
+    test_acc = 0
+    test_batches = 0
+    all_a_probs = np.zeros((X_test.shape[0]-(X_test.shape[0]%batch_size),3))
+    print("Now testing (and saving probabilities in all_a_probs, "+
+          "shape={}".format(all_a_probs.shape))
+
+    for batch in iterate_minibatches(X_test, y_test, batch_size, shuffle=False):
+        inputs, targets = batch
+        acc, a_probs = val_fn(inputs, targets)
+        all_a_probs[batch_size*test_batches:batch_size*(test_batches+1)] = a_probs
+        test_acc += acc
+        test_batches += 1
+    test_acc = test_acc/test_batches * 100
+    print("Final results:")
+    print("  test accuracy:\t\t{:.2f} %".format(test_acc))
+    np.savetxt("qnet_output/test_action_preds.txt", all_a_probs, fmt='%1.5f')
+
+
+if __name__ == "__main__":
+    #train()
+    sandbox_test()
