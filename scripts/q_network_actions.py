@@ -284,9 +284,10 @@ if __name__ == "__main__":
     path = "/home/daniel/Algorithmic-HRI/final_data/breakout/"
     X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
 
-    out = 'qnet_output/'
+    out = 'tmp/'
     utilities.make_path_check_exists(out)
-    regs = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
+    #regs = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
+    regs = [5e-3, 1e-2]
     for r in regs:
         print("\nCurrently on regularization r={}".format(r))
         print("L1 regularization.\n")

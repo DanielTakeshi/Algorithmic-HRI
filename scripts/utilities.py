@@ -20,7 +20,7 @@ def rgb2gray(rgb):
     that rgb.shape = (210,160,3) but really it sums over the (210,160)
     components, weighted according to these tuned values.
     """
-    return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+    return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
 
 def analyze_model_files(model_file_path):
     """ Analyze model files. I'll put this here for now. """
