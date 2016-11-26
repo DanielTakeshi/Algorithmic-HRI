@@ -29,11 +29,14 @@ import os
 import sys
 import time
 import numpy as np
+np.set_printoptions(suppress=True)
 import theano
 import theano.tensor as T
 import lasagne
 from lasagne.regularization import l2, l1
 import utilities
+from PIL import Image
+import cv2
 
 
 def load_datasets(path):
@@ -352,6 +355,48 @@ def sandbox_test():
     np.savetxt("qnet_output/test_action_preds.txt", all_a_probs, fmt='%1.5f')
 
 
+def save_phi(phi, game, index, padding):
+    """ This will save 'phi' to output as a series of stitched images. Heh, who
+    would have thought that I'd use code from a blog post for research the
+    following day?
+    """
+    blank_image = Image.new("RGB", (84*4+30, 84), "white")
+    coords = [(0,0), (84+10,0), (84*2+20,0), (84*3+30,0)]
+    for i in range(phi.shape[0]):
+        f = Image.fromarray(phi[i])
+        blank_image.paste(f, coords[i])
+    name = str(index).zfill(padding)
+    blank_image.save("qnet_output/" +game+ "_phi_" +name+ ".png")
+
+
+def do_analysis_testing():
+    """ With the action output file, let's inspect the predictions. """
+    path = "final_data/breakout/"
+    aprobs = np.loadtxt("qnet_output/test_action_preds.txt")
+    X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
+    X_test = X_test[:5024] 
+    y_test = y_test[:5024] 
+    print("Loaded data. X_test.shape = {}\ny_test.shape = {}\naprobs.shape = {}.".format(
+        X_test.shape, y_test.shape, aprobs.shape))
+    print("First few y_tests:\n{}".format(y_test[:20]))
+    print("First few aprobs:\n{}".format(aprobs[:20]))
+    #max_noop = np.sort(aprobs[:,0])
+    #print(max_noop)
+
+    # Let's just do some quick tests.
+    i = 8 # (strong) Do nothing
+    save_phi(phi=X_test[i], game='breakout', index=i, padding=4)
+    i = 6 # (strong) Go left 
+    save_phi(phi=X_test[i], game='breakout', index=i, padding=4)
+    i = 2 # (strong) Go right
+    save_phi(phi=X_test[i], game='breakout', index=i, padding=4)
+
+
 if __name__ == "__main__":
+    """ Choose which of the methods I want to do. Generally I won't be running
+    all of these at once. Apologies, there's a LOT of assumptions here. The code
+    isn't quite general enough yet. =(
+    """
     #train()
-    sandbox_test()
+    #sandbox_test()
+    do_analysis_testing()
