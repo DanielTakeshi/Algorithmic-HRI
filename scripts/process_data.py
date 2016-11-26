@@ -50,7 +50,7 @@ logger.addHandler(ch)
 # ---------------------- #
 # Other global variables #
 # ---------------------- #
-DIGITS_SCREENSHOTS = 6
+DIGITS = 6
 PAD_T = 7 # One more than screenshots
 PHI_LENGTH = 4
 RESIZED_HEIGHT = 84
@@ -59,25 +59,30 @@ CROP_OFFSET = 8 # Breakout
 
 
 def frame_skipping(num_frames, openai_style=False):
-    """ Frame skips, done in a stochastic manner (2,3,4) just like OpenAI. AFTER
-    this is done, we then use history (e.g. phi) based only on these indices.
-
-    UPDATE: Never mind, let's just do it by 4 to be consistent with spragnur.
+    """ This subsamples indices which we later use for frame skipping.
+    
+    There are two options. One is to use OpenAI-style and skip 1, 2, or 3 frames
+    at random (thus the actions are repeated for 2, 3, or 4 frames). The second,
+    default way, is to use what DQN did originally, with actions repeated 4
+    times. We still need the previous index to stop flickering, but we don't do
+    that here (it's done elsewhere in the code).
     
     Args:
         num_frames: The total number of frames in a particular game.
 
     Returns:
         An array of subsampled indices. These are the indices that we want to
-        use (and therefore not skip). The first few frames are stored but the
-        actions will not be chosen until the 4th one (or whatever value
-        corresponds to PHI_LENGTH).
+        use (and therefore not skip). Note that for DQN, we only return every
+        4th index.
     """
     nonskipped = []
-    last_index = 0
+    frame_skip = 4
+    last_index = frame_skip
+    assert last_index < num_frames
+
     while last_index < num_frames:
         nonskipped.append(last_index)
-        skip = 4
+        skip = frame_skip
         if openai_style:
             skip = random.randint(2,4)
         last_index += skip
@@ -140,14 +145,15 @@ def downsample_all(game_name, output_dir, raw_data_dir):
             open(game_dir+'/rewards.txt', 'r') as f_rewards:
 
             # First, get number of frames and subsample from them, skipping
-            # intervals of 4 (or it could be 2, 3, and 4 (at random)).
+            # intervals. Depends on whether we use OpenAI-style or DQN.
             actions_raw = np.array(f_actions.readlines())
             rewards_raw = np.array(f_rewards.readlines())
             assert len(actions_raw) == len(rewards_raw)
             num_frames = len(actions_raw)
             logger.info("Processing game_dir = {} with num_frames = {}".format(
                 game_dir, num_frames))
-            indices_to_use = frame_skipping(num_frames)
+            indices_to_use = frame_skipping(num_frames, openai_style=False)
+            assert len(indices_to_use) > PHI_LENGTH
 
             # Our (PHI_LENGTH,84,84)-shape image for CNN input. phi[0] is the
             # oldest frame, and phi[PHI_LENGTH-1] is the most recent frame.
@@ -156,15 +162,26 @@ def downsample_all(game_name, output_dir, raw_data_dir):
             # First few frames. These get ignored since we don't actually save
             # until later, but humans don't react fast enough so it works out.
             for (index,scr_index) in enumerate(indices_to_use[:PHI_LENGTH]):
-                padded_index = str(scr_index).zfill(DIGITS_SCREENSHOTS)
-                frame_raw = scipy.misc.imread(game_dir+ '/screenshots/frame_' +padded_index+ '.png')
+                index_prev = str(scr_index-1).zfill(DIGITS)
+                index_curr = str(scr_index).zfill(DIGITS)
+                frame_raw_prev = scipy.misc.imread(
+                    game_dir+ '/screenshots/frame_' +index_prev+ '.png')
+                frame_raw_curr = scipy.misc.imread(
+                    game_dir+ '/screenshots/frame_' +index_curr+ '.png')
+                frame_raw = np.maximum(frame_raw_prev, frame_raw_curr)
                 frame = downsample_single(game_name, frame_raw)
                 phi[index] = frame
 
-            # Now this will start saving 'phi'. Discard oldest image each time.
-            for scr_index in indices_to_use:
-                padded_index = str(scr_index).zfill(DIGITS_SCREENSHOTS)
-                frame_raw = scipy.misc.imread(game_dir+ '/screenshots/frame_' +padded_index+ '.png')
+            # Save phis and discard oldest frame each time. We don't use
+            # enumerate as we don't need the index of scr_index anymore.
+            for scr_index in indices_to_use[PHI_LENGTH:]:
+                index_prev = str(scr_index-1).zfill(DIGITS)
+                index_curr = str(scr_index).zfill(DIGITS)
+                frame_raw_prev = scipy.misc.imread(
+                    game_dir+ '/screenshots/frame_' +index_prev+ '.png')
+                frame_raw_curr = scipy.misc.imread(
+                    game_dir+ '/screenshots/frame_' +index_curr+ '.png')
+                frame_raw = np.maximum(frame_raw_prev, frame_raw_curr)
                 frame = downsample_single(game_name, frame_raw)
 
                 # THANK GOD FOR NUMPY!!! (The irony: I am an atheist.)
