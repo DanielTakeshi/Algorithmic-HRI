@@ -369,8 +369,13 @@ def save_phi(phi, game, index, padding):
     blank_image.save("qnet_output/" +game+ "_phi_" +name+ ".png")
 
 
-def do_analysis_testing():
-    """ With the action output file, let's inspect the predictions. """
+def do_analysis_testing_v1():
+    """ 
+    With the action output file, let's inspect the predictions.  I manually
+    created a file with (predicted probs)-(target) to make inspection easy.
+    Don't forget, vim numbers lines starting from 1, but it's 0-indexed!! This
+    method lets me visually inspect an index and save its image via save_phi.
+    """
     path = "final_data/breakout/"
     aprobs = np.loadtxt("qnet_output/test_action_preds.txt")
     X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
@@ -381,15 +386,20 @@ def do_analysis_testing():
     print("First few y_tests:\n{}".format(y_test[:20]))
     print("First few aprobs:\n{}".format(aprobs[:20]))
     #max_noop = np.sort(aprobs[:,0])
-    #print(max_noop)
+    #np.savetxt("test_action_targets", y_test.reshape((5024,1)), fmt='%d') # do this once
 
-    # Let's just do some quick tests.
-    i = 8 # (strong) Do nothing
+    # Let's just do some quick tests. Change index i to be what I want.
+    i = 1
     save_phi(phi=X_test[i], game='breakout', index=i, padding=4)
-    i = 6 # (strong) Go left 
-    save_phi(phi=X_test[i], game='breakout', index=i, padding=4)
-    i = 2 # (strong) Go right
-    save_phi(phi=X_test[i], game='breakout', index=i, padding=4)
+
+
+def do_analysis_testing_v2():
+    """ This will use the qnet_output/test_action_pairs.txt file to do more
+    rigorous analysis, e.g. which classes did it mess up on, worst case
+    scenarios, etc.
+    """
+    path = "final_data/breakout/"
+    aprob_pairs = np.loadtxt("qnet_output/test_action_pairs.txt")
 
 
 if __name__ == "__main__":
@@ -399,4 +409,5 @@ if __name__ == "__main__":
     """
     #train()
     #sandbox_test()
-    do_analysis_testing()
+    #do_analysis_testing_v1()
+    do_analysis_testing_v2()
