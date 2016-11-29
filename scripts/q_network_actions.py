@@ -413,20 +413,23 @@ def do_analysis_testing_v2():
     pairs_correct = aprob_pairs[inds_correct]
     pairs_wrong = aprob_pairs[inds_wrong]
 
-    # Find worst-case scenario(s). Actually, it's easiest w/full data...
-    worst_prob = 1.0
-    worst_index = -1
+    # Do some analysis. Actually, it's easiest w/full data...
+    #worst_prob = 1.0
+    #worst_index = -1
+    correct = np.array([0, 0, 0])
+    total = np.array([0, 0, 0])
 
     for (index,row) in enumerate(aprob_pairs):
         target = int(row[3])
-        if (np.argmax(row[:3]) != target):
-            target_prob = row[target] 
-            if target_prob < worst_prob:
-                worst_prob = target_prob
-                worst_index = index
+        if np.argmax(row[:3]) == target:
+            correct[target] += 1
+        total[target] += 1
+    print(correct)
+    print(total)
+    print(correct.astype('float')/total)
 
-    print("\nWorst **index** (starting from 0) in full data: {}".format(worst_index))
-    print("Worst probability: {}".format(worst_prob))
+    #print("\nWorst **index** (starting from 0) in full data: {}".format(worst_index))
+    #print("Worst probability: {}".format(worst_prob))
 
 
 if __name__ == "__main__":
