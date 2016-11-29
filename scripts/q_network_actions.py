@@ -20,7 +20,10 @@ Note: In spragnur's DQN code, load network weights like this:
         param_values = [f['arr_%d' % i] for i in range(len(f.files))]
     lasagne.layers.set_all_param_values(network, param_values)
 
-(c) December 2016 by Daniel Seita, heavily based off of spragnur's code and the
+Updates November 28, 2016: I've added a lot of functionality to analyze the
+classifier.
+
+(c) November 2016 by Daniel Seita, heavily based off of spragnur's code and the
 Lasagne tutorial.
 """
 
@@ -369,7 +372,7 @@ def save_phi(phi, game, index, padding):
     blank_image.save("qnet_output/" +game+ "_phi_" +name+ ".png")
 
 
-def do_analysis_testing_v1():
+def do_analysis_testing_v1(i=0):
     """ 
     With the action output file, let's inspect the predictions.  I manually
     created a file with (predicted probs)-(target) to make inspection easy.
@@ -388,26 +391,51 @@ def do_analysis_testing_v1():
     #max_noop = np.sort(aprobs[:,0])
     #np.savetxt("test_action_targets", y_test.reshape((5024,1)), fmt='%d') # do this once
 
-    # Let's just do some quick tests. Change index i to be what I want.
-    i = 1
+    # This will save the phi-s that I want.
     save_phi(phi=X_test[i], game='breakout', index=i, padding=4)
 
 
 def do_analysis_testing_v2():
-    """ This will use the qnet_output/test_action_pairs.txt file to do more
-    rigorous analysis, e.g. which classes did it mess up on, worst case
-    scenarios, etc.
+    """ 
+    This will use the qnet_output/test_action_pairs.txt file to do more rigorous
+    analysis, e.g. which classes did it mess up on, worst case scenarios, etc.
     """
     path = "final_data/breakout/"
     aprob_pairs = np.loadtxt("qnet_output/test_action_pairs.txt")
+    print("aprob_pairs.shape={}".format(aprob_pairs.shape))
+    print("\nFirst few action probabilities, followed by arg-max for them.")
+    print((aprob_pairs[:,:3])[:20])
+    print((np.argmax(aprob_pairs[:,:3], axis=1))[:20])
+
+    # Separate data into indices for correct (and incorrect) predictions.
+    inds_correct = np.where(np.argmax(aprob_pairs[:,:3], axis=1) == aprob_pairs[:,3])[0]
+    inds_wrong = np.where(np.argmax(aprob_pairs[:,:3], axis=1) != aprob_pairs[:,3])[0]
+    pairs_correct = aprob_pairs[inds_correct]
+    pairs_wrong = aprob_pairs[inds_wrong]
+
+    # Find worst-case scenario(s). Actually, it's easiest w/full data...
+    worst_prob = 1.0
+    worst_index = -1
+
+    for (index,row) in enumerate(aprob_pairs):
+        target = int(row[3])
+        if (np.argmax(row[:3]) != target):
+            target_prob = row[target] 
+            if target_prob < worst_prob:
+                worst_prob = target_prob
+                worst_index = index
+
+    print("\nWorst **index** (starting from 0) in full data: {}".format(worst_index))
+    print("Worst probability: {}".format(worst_prob))
 
 
 if __name__ == "__main__":
-    """ Choose which of the methods I want to do. Generally I won't be running
-    all of these at once. Apologies, there's a LOT of assumptions here. The code
+    """
+    Choose which of the methods I want to do. Generally I won't be running all
+    of these at once. Apologies, there's a LOT of assumptions here. The code
     isn't quite general enough yet. =(
     """
     #train()
     #sandbox_test()
-    #do_analysis_testing_v1()
+    #do_analysis_testing_v1(i=653)
     do_analysis_testing_v2()
