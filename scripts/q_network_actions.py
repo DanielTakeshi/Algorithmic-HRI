@@ -79,6 +79,74 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         yield inputs[excerpt], targets[excerpt]
 
 
+def build_nature_network_dnn(input_width, input_height, output_dim, num_frames,
+                             batch_size, human_net, input_var):
+    """
+    Build a large network consistent with the DeepMind Nature paper.
+    """
+    from lasagne.layers import dnn
+
+    if human_net:
+        l_in = lasagne.layers.InputLayer(
+            shape=(None, num_frames, input_width, input_height),
+            input_var=input_var
+        )
+    else:
+        l_in = lasagne.layers.InputLayer(
+            shape=(None, num_frames, input_width, input_height)
+        )
+
+    l_conv1 = dnn.Conv2DDNNLayer(
+        l_in,
+        num_filters=32,
+        filter_size=(8, 8),
+        stride=(4, 4),
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.HeUniform(),
+        b=lasagne.init.Constant(.1)
+    )
+
+    l_conv2 = dnn.Conv2DDNNLayer(
+        l_conv1,
+        num_filters=64,
+        filter_size=(4, 4),
+        stride=(2, 2),
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.HeUniform(),
+        b=lasagne.init.Constant(.1)
+    )
+
+    l_conv3 = dnn.Conv2DDNNLayer(
+        l_conv2,
+        num_filters=64,
+        filter_size=(3, 3),
+        stride=(1, 1),
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.HeUniform(),
+        b=lasagne.init.Constant(.1)
+    )
+
+    l_hidden1 = lasagne.layers.DenseLayer(
+        l_conv3,
+        num_units=512,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.HeUniform(),
+        b=lasagne.init.Constant(.1)
+    )
+
+    l_out = lasagne.layers.DenseLayer(
+        l_hidden1,
+        num_units=output_dim,
+        nonlinearity=lasagne.nonlinearities.softmax, # Daniel: new
+        W=lasagne.init.HeUniform(),
+        b=lasagne.init.Constant(.1)
+    )
+
+    return l_out
+
+
+# Daniel: TODO change this to what I actually have in deep_q_rl/make_net.py
+# Oh, with the exception of the softmax, of course.
 def build_nips_network_dnn(input_var, input_width, input_height, output_dim,
                            num_frames, batch_size):
     """
@@ -149,12 +217,13 @@ def do_training(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1',
 
     # Build the network. Unlike spragnur's code, I will need the input variables
     # because I don't want to bother using shared variables (for now).
-    network = build_nips_network_dnn(input_var=input_var,
-                                     input_width=84, 
-                                     input_height=84, 
-                                     output_dim=3, # Breakout num actions
-                                     num_frames=4, 
-                                     batch_size=batch_size)
+    network = build_nature_network_dnn(input_width=84, 
+                                       input_height=84,
+                                       output_dim=3, # Breakout actions
+                                       num_frames=4,
+                                       batch_size=batch_size,
+                                       human_net=True, 
+                                       input_var=input_var)
     print("Finished builing the network.")
     params = lasagne.layers.get_all_params(network, trainable=True)
 
@@ -290,7 +359,7 @@ def train():
     path = "/home/daniel/Algorithmic-HRI/final_data/breakout/"
     X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
 
-    out = 'qnet_output/'
+    out = 'qnet_out_breakout_nature/'
     utilities.make_path_check_exists(out)
     regs = [5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2]
     for r in regs:
@@ -438,7 +507,7 @@ if __name__ == "__main__":
     of these at once. Apologies, there's a LOT of assumptions here. The code
     isn't quite general enough yet. =(
     """
-    #train()
+    train()
     #sandbox_test()
     #do_analysis_testing_v1(i=653)
-    do_analysis_testing_v2()
+    #do_analysis_testing_v2()

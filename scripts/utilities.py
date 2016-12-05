@@ -43,4 +43,4 @@ def analyze_model_files(model_file_path):
         print(item)
 
 if __name__ == "__main__":
-    analyze_model_files('qnet_output/')
+    analyze_model_files('qnet_out_breakout_nature/')
