@@ -12,7 +12,10 @@ From the home directory (doesn't have to be Breakout), we simply call:
 
 If I want to delete the data, just delete whatever this file creates (don't
 delete the raw data files from the games!).  I am probably going to use
-TensorFlow, so this should be a good learning experience.
+TensorFlow, so this should be a good learning experience. UPDATE: I'm using
+Theano.
+
+UPDATE: I'm also changing this to create human experience replay data.
 """
 
 import cv2
@@ -125,6 +128,10 @@ def downsample_all(game_name, output_dir, raw_data_dir):
         - data_raw/game_name/phis/{}.npy // One per 'phi', i.e. four frames.
         - data_raw/game_name/actions_target.txt // Text file, the action per line.
 
+    UPDATE: Let's also create a file:
+        - {game_name}_human_exp_replay.npz
+        with human experience replay.
+
     Args:
         game_name: The game we are using. Supported games: 'breakout'.
         output_dir: File path that ends at the game name.
@@ -138,6 +145,11 @@ def downsample_all(game_name, output_dir, raw_data_dir):
     t = 0 
     target_actions = []
     utilities.make_path_check_exists(raw_data_dir+ "/phis/")
+
+    # Human experience replay
+    imgs = [] # Must be (PHI_LENGTH+1, RESIZED_HEIGHT, RESIZED_WIDTH)
+    actions = []
+    rewards = []
 
     for game_dir in current_games:
         start = t
@@ -159,8 +171,10 @@ def downsample_all(game_name, output_dir, raw_data_dir):
             # oldest frame, and phi[PHI_LENGTH-1] is the most recent frame.
             phi = np.zeros((PHI_LENGTH,RESIZED_HEIGHT,RESIZED_WIDTH))
 
-            # First few frames. These get ignored since we don't actually save
-            # until later, but humans don't react fast enough so it works out.
+            # First few frames.  These are ignored since we don't save until
+            # later, but humans don't react fast enough so it works out. Also,
+            # the phi would be incomplete otherwise.
+
             for (index,scr_index) in enumerate(indices_to_use[:PHI_LENGTH]):
                 index_prev = str(scr_index-1).zfill(DIGITS)
                 index_curr = str(scr_index).zfill(DIGITS)
@@ -172,9 +186,12 @@ def downsample_all(game_name, output_dir, raw_data_dir):
                 frame = downsample_single(game_name, frame_raw)
                 phi[index] = frame
 
-            # Save phis and discard oldest frame each time. We don't use
-            # enumerate as we don't need the index of scr_index anymore.
-            for scr_index in indices_to_use[PHI_LENGTH:]:
+            # Save phis and discard oldest frame each time.  UPDATE: Now I will
+            # be extracting the frames. OH, that requires the NEXT index as well
+            # ... let's do indices_to_use up to '-1' then! Be careful about the
+            # differences among index, scr_index, and indices_to_use.
+
+            for (index,scr_index) in enumerate(indices_to_use[PHI_LENGTH:-1]):
                 index_prev = str(scr_index-1).zfill(DIGITS)
                 index_curr = str(scr_index).zfill(DIGITS)
                 frame_raw_prev = scipy.misc.imread(
@@ -192,11 +209,30 @@ def downsample_all(game_name, output_dir, raw_data_dir):
                 np.save(raw_data_dir+ "/phis/phi_" +padded_t, phi)
                 target_actions.append(actions_raw[scr_index])
                 t += 1
+
+                # Experience replay stuff! For this I'll include everything, I
+                # think? Probably not wise to filter this one like I did for the
+                # classifier (as in, this one will have FIRE, etc.).
+                if np.random.rand() < 0.1:
+                    index_next = str(indices_to_use[index+1]).zfill(DIGITS)
+                    frame_raw_next = scipy.misc.imread(
+                        game_dir+ '/screenshots/frame_' +index_next+ '.png')
+                    frame = downsample_single(game_name, frame_raw_next)
+                    xp_replay_phi = np.vstack((phi, np.array([frame])))
+                    assert xp_replay_phi.shape != phi.shape
+                    imgs.append(xp_replay_phi)
+                    actions.append(actions_raw[scr_index])
+                    rewards.append(rewards_raw[scr_index])
+
         logger.info("Finished processing game, number of phis/actions = {}.".format(t-start))
 
     np.savetxt(raw_data_dir+ "/actions_target.txt", 
                np.array(target_actions).astype('uint8'),
                fmt='%d')
+    np.savez(game_name+"-human_experience_replay",
+             imgs = np.array(imgs),
+             actions = np.array(actions),
+             rewards = np.array(rewards)) 
     logger.info("Finished all games. Number of phis/actions = {}.".format(t))
 
 
@@ -310,7 +346,7 @@ def create_test_valid_train(game_name, indices, ratio, raw_data_dir, final_data_
 
 if __name__ == "__main__":
     """ 
-    A sequence of calls to get the data into a form usable by TensorFlow.
+    A sequence of calls to get the data into a form usable by Theano.
     First, we go through all the games and save phis and actions. Second, we get
     a set of balanced indices 
     """
@@ -324,9 +360,9 @@ if __name__ == "__main__":
     downsample_all(game_name, output_dir, raw_data_dir) 
 
     # Second: subsample these to balance dataset and save into new arrays.
-    indices = sample_indices(game_name, raw_data_dir)
-    ratio = np.array([0.76, 0.04, 0.2])
-    create_test_valid_train(game_name, indices, ratio, raw_data_dir, final_data_dir)
+    # indices = sample_indices(game_name, raw_data_dir)
+    # ratio = np.array([0.76, 0.04, 0.2])
+    # create_test_valid_train(game_name, indices, ratio, raw_data_dir, final_data_dir)
 
     # A quick reminder at the end to save the log.
     logger.info("All done. Rename log.txt if you want to save the log." \
