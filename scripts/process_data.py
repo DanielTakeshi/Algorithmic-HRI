@@ -230,9 +230,9 @@ def downsample_all(game_name, output_dir, raw_data_dir):
                np.array(target_actions).astype('uint8'),
                fmt='%d')
     np.savez(game_name+"-human_experience_replay",
-             imgs = np.array(imgs),
-             actions = np.array(actions),
-             rewards = np.array(rewards)) 
+             imgs = np.array(imgs).astype('float32'),
+             actions = np.array(actions).astype('uint8'),
+             rewards = np.array(rewards).astype('uint8')) 
     logger.info("Finished all games. Number of phis/actions = {}.".format(t))
 
 
