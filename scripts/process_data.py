@@ -221,8 +221,8 @@ def downsample_all(game_name, output_dir, raw_data_dir):
                     xp_replay_phi = np.vstack((phi, np.array([frame])))
                     assert xp_replay_phi.shape != phi.shape
                     imgs.append(xp_replay_phi)
-                    actions.append(actions_raw[scr_index])
-                    rewards.append(rewards_raw[scr_index])
+                    actions.append(int(actions_raw[scr_index]))
+                    rewards.append(int(rewards_raw[scr_index]))
 
         logger.info("Finished processing game, number of phis/actions = {}.".format(t-start))
 
