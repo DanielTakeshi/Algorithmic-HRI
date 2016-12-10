@@ -206,7 +206,8 @@ def build_nips_network_dnn(input_var, input_width, input_height, output_dim,
 
 
 def do_training(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1',
-                reg=0, num_epochs=100, batch_size=32, out_dir='qnet_out'):
+                reg=0, num_epochs=100, batch_size=32, out_dir='qnet_out',
+                num_acts=3):
     """ 
     Runs the whole pipeline. Can call this multiple times during process of
     hyperparameter tuning.
@@ -219,7 +220,7 @@ def do_training(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1',
     # because I don't want to bother using shared variables (for now).
     network = build_nature_network_dnn(input_width=84, 
                                        input_height=84,
-                                       output_dim=3, # Breakout actions
+                                       output_dim=num_acts,
                                        num_frames=4,
                                        batch_size=batch_size,
                                        human_net=True, 
@@ -356,20 +357,21 @@ def do_training(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1',
 
 
 def train():
-    path = "/home/daniel/Algorithmic-HRI/final_data/breakout/"
-    X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
-
-    out = 'qnet_out_breakout_nature/'
+    path = "/home/daniel/Algorithmic-HRI/final_data/space_invaders/"
+    na = 6 # Change according to game!
+    out = 'qnet_spaceinv_nature/'
     utilities.make_path_check_exists(out)
     regs = [5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2]
+    X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
+
     for r in regs:
         print("\nCurrently on regularization r={}".format(r))
         print("L1 regularization.\n")
         do_training(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1',
-                reg=r, num_epochs=30, batch_size=32, out_dir=out)
+                reg=r, num_epochs=30, batch_size=32, out_dir=out, num_acts=na)
         print("\n Now L2 regularization.\n")
         do_training(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l2',
-                reg=r, num_epochs=30, batch_size=32, out_dir=out)
+                reg=r, num_epochs=30, batch_size=32, out_dir=out, num_acts=na)
     print("\nWhew! All done with everything.")
 
 

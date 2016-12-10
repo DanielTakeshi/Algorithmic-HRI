@@ -106,7 +106,9 @@ def downsample_single(game_name, frame_raw_color):
     defaults to reducing (210,160,3)-dimensional numpy arrays into grayscales
     with shape (84,84).  For now we will use spragnur's method with cropping;
     his scaling method is probably going to be worse. UPDATE: Never mind I'm
-    using the scaling. I really need an option here soon.
+    using the scaling. I really need an option here soon, but I think in the
+    future I will not be using the NIPS version at all, so I'll just keep that
+    commented out for now.
 
     Args:
         game_name: The game we are using. Supported games: 'breakout'.
@@ -125,7 +127,8 @@ def downsample_single(game_name, frame_raw_color):
     ## cropped = resized[crop_y_cutoff:(crop_y_cutoff+RESIZED_HEIGHT):]
     ## return cropped
 
-    return cv2.resize(frame_raw, (84,84), interpolation=cv2.INTER_LINEAR)
+    return cv2.resize(frame_raw, (RESIZED_HEIGHT,RESIZED_WIDTH), 
+                      interpolation=cv2.INTER_LINEAR)
 
 
 def downsample_all(game_name, output_dir, raw_data_dir):
@@ -262,9 +265,6 @@ def sample_indices(game_name, raw_data_dir):
     Returns:
         The (shuffled) indices for the actual data we use for Deep Learning.
     """
-    if (game_name != "breakout" and game_name != "space_invaders"):
-        raise ValueError("game_name \'{}\' is not supported".format(game_name))
-
     actions = np.loadtxt(raw_data_dir+ "/actions_target.txt")
     (unique_a, counts_a) = np.unique(actions, return_counts=True)
     logger.info("\nUnique actions: {},\ncorresponding counts: {}".format(unique_a,counts_a))
@@ -296,6 +296,9 @@ def sample_indices(game_name, raw_data_dir):
         indices_all = np.concatenate((indices_noop, indices_fire,
                                       indices_left, indices_right,
                                       indices_fleft, indices_fright))
+
+    else:
+        raise ValueError("game_name \'{}\' is not supported".format(game_name))
 
     np.random.shuffle(indices_all)
     assert len(indices_all) <= len(actions)
@@ -375,12 +378,12 @@ def create_test_valid_train(game_name, indices, ratio, raw_data_dir, final_data_
 
 
 if __name__ == "__main__":
-    """ 
-    A sequence of calls to get the data into a form usable by Theano.
+    """  A sequence of calls to get the data into a form usable by Theano.
     First, we go through all the games and save phis and actions. Second, we get
-    a set of balanced indices 
+    a set of balanced indices.
     """
 
+    # Settings (DOUBLE CHECK!!)
     game_name = "space_invaders"
     logger.info("game_name = {}".format(game_name))
     output_dir = "output/" +game_name
