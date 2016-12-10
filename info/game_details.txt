@@ -20,6 +20,9 @@ deal. Also, don't remove actions at the end, because there is no lag, i.e. I
 can keep moving LEFT in Breakout at the end, and the game WILL register that. So
 don't crop off at the end.
 
+Idea 4: Let's set minimum score thresholds. If I played really awful for some
+games, there's no sense including those weak data points. TRY TO ENFORCE THESE.
+
 ******************************
 ** CHECKLIST BEFORE PLAYING **
 ******************************
@@ -37,19 +40,24 @@ games like Space Invaders where it's unavoidable.
 
 4. After EVERY game is over, inspect the output files making sure everything
 proceeded as normal, nothing out of the ordinary. If so, you better delete some
-files!
+files! Also, double check the reward that I got to make sure it's good!
+
+5. Try to diversify openings, especially for games like Space Invaders.
 
 **************
 ** BREAKOUT **
 **************
+
+Mininum score: 50 (note: I unfortunately did not enforce this but I almost
+always got this much, and I should probably re-enforce these rules ...)
 
 Actions:
 NO-OP (coded as "0")
 FIRE (coded as "1") 
 LEFT (coded as "4")
 RIGHT (coded as "3")
-FIRE LEFT (coded as "12")
-FIRE RIGHT (coded as "11")
+[not in minimal set] FIRE LEFT (coded as "12")
+[not in minimal set] FIRE RIGHT (coded as "11")
 
 The FIRE will be tricky to train, maybe force it? It only happens on the order
 of 5 times per game and if we do it more often it has no effect.
@@ -58,3 +66,23 @@ Also, ack, I just saw FIRE LEFT and FIRE RIGHT. Whatever you do, make sure you
 don't move left while firing! That will trigger those extra actions. We
 **really** want it to be only 0s, 1s, 3s, and 4s, and then in training I'll dump
 the 1s (and maybe even the 0s).
+
+
+********************
+** SPACE INVADERS **
+********************
+
+Minimum score: 1000 (yes, it's high, but I want high-quality data; this means
+I've easily cleared the first board, or gotten bonuses, etc.). Actually maybe
+simply enforce that I clear the first board? It's gotten pretty easy to do that!
+
+Actions (same as before, actually):
+NO-OP (coded as "0")
+FIRE (coded as "1") 
+LEFT (coded as "4")
+RIGHT (coded as "3")
+FIRE LEFT (coded as "12")
+FIRE RIGHT (coded as "11")
+
+This time, we really do have about six different actions to take. Let's record
+them all, but look at the distribution of actions before doing anything else.

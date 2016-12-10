@@ -18,6 +18,7 @@ work station!
 Games tested/verified/understood with notes (see other files for details):
 
 1. Breakout
+2. Space Invaders [WIP]
 """
 
 import os
