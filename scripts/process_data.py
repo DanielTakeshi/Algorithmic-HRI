@@ -16,6 +16,11 @@ TensorFlow, so this should be a good learning experience. UPDATE: I'm using
 Theano.
 
 UPDATE: I'm also changing this to create human experience replay data.
+
+Notes:
+    output is where the data is stored from human gameplay
+    data_raw contains the phis
+    final_data contains data we use for Deep Learning
 """
 
 import cv2
@@ -100,25 +105,27 @@ def downsample_single(game_name, frame_raw_color):
     different games take different components of the screen. In general, this
     defaults to reducing (210,160,3)-dimensional numpy arrays into grayscales
     with shape (84,84).  For now we will use spragnur's method with cropping;
-    his scaling method is probably going to be worse.
+    his scaling method is probably going to be worse. UPDATE: Never mind I'm
+    using the scaling. I really need an option here soon.
 
     Args:
         game_name: The game we are using. Supported games: 'breakout'.
         frame_raw: The raw frame, should be (210,160,3).
     """
-    if (game_name != "breakout"):
+    if (game_name != "breakout" and game_name != "space_invaders"):
         raise ValueError("game_name \'{}\' is not supported".format(game_name))
     assert frame_raw_color.shape == (210,160,3)
     frame_raw = utilities.rgb2gray(frame_raw_color)
 
-    resize_height = int(round(210. * RESIZED_WIDTH/160.))
-    resized = cv2.resize(frame_raw, 
-                         (RESIZED_WIDTH,resize_height),
-                         interpolation=cv2.INTER_LINEAR)
+    ## resize_height = int(round(210. * RESIZED_WIDTH/160.))
+    ## resized = cv2.resize(frame_raw, 
+    ##                      (RESIZED_WIDTH,resize_height),
+    ##                      interpolation=cv2.INTER_LINEAR)
+    ## crop_y_cutoff = resize_height - CROP_OFFSET - RESIZED_HEIGHT
+    ## cropped = resized[crop_y_cutoff:(crop_y_cutoff+RESIZED_HEIGHT):]
+    ## return cropped
 
-    crop_y_cutoff = resize_height - CROP_OFFSET - RESIZED_HEIGHT
-    cropped = resized[crop_y_cutoff:(crop_y_cutoff+RESIZED_HEIGHT):]
-    return cropped
+    return cv2.resize(frame_raw, (84,84), interpolation=cv2.INTER_LINEAR)
 
 
 def downsample_all(game_name, output_dir, raw_data_dir):
@@ -133,7 +140,8 @@ def downsample_all(game_name, output_dir, raw_data_dir):
         with human experience replay.
 
     Args:
-        game_name: The game we are using. Supported games: 'breakout'.
+        game_name: The game we are using. Supported games: 'breakout',
+            'space_invaders'.
         output_dir: File path that ends at the game name.
         raw_data_dir: Where the downsampled files are stored! It should be
             data_raw/game_name/.
@@ -229,19 +237,23 @@ def downsample_all(game_name, output_dir, raw_data_dir):
     np.savetxt(raw_data_dir+ "/actions_target.txt", 
                np.array(target_actions).astype('uint8'),
                fmt='%d')
+
+    # Let's shuffle the data? Maybe that will work better?
+    imgs_ordered = np.array(imgs).astype('float32')
+    actions_ordered = np.array(actions).astype('uint8')
+    rewards_ordered = np.array(rewards).astype('uint8')
+    indices = np.arange(len(actions_ordered))
+    np.random.shuffle(indices)
     np.savez(game_name+"-human_experience_replay",
-             imgs = np.array(imgs).astype('float32'),
-             actions = np.array(actions).astype('uint8'),
-             rewards = np.array(rewards).astype('uint8')) 
+             imgs=imgs_ordered[indices],
+             actions=actions_ordered[indices],
+             rewards=rewards_ordered[indices]) 
     logger.info("Finished all games. Number of phis/actions = {}.".format(t))
 
 
 def sample_indices(game_name, raw_data_dir):
-    """
-    Given the phis and targets (actions), sample them to balance data.
-
-    This assumes Breakout! We assume we only care about 0, 3, and 4 actions.
-    We'll have to figure out someting about that later.
+    """ Given the phis and targets (actions), sample them to balance data. This
+    currently supports Breakout and Space Invaders.
 
     Args:
         game_name: The game we are using. Supported games: 'breakout'.
@@ -250,7 +262,7 @@ def sample_indices(game_name, raw_data_dir):
     Returns:
         The (shuffled) indices for the actual data we use for Deep Learning.
     """
-    if (game_name != "breakout"):
+    if (game_name != "breakout" and game_name != "space_invaders"):
         raise ValueError("game_name \'{}\' is not supported".format(game_name))
 
     actions = np.loadtxt(raw_data_dir+ "/actions_target.txt")
@@ -258,17 +270,33 @@ def sample_indices(game_name, raw_data_dir):
     logger.info("\nUnique actions: {},\ncorresponding counts: {}".format(unique_a,counts_a))
 
     # For Breakout, but noop, left, and right are consistent among games.
-    indices_noop_all = np.where(actions == 0)[0]
-    indices_left = np.where(actions == 4)[0]
-    indices_right = np.where(actions == 3)[0]
-    num_noop_touse = (len(indices_left)+len(indices_right))/2
-    logger.info("num_noop_touse = {}".format(num_noop_touse))
-    indices_noop = np.random.choice(indices_noop_all, 
-                                    size=num_noop_touse,
-                                    replace= False)
+    if game_name == "breakout":
+        indices_noop_all = np.where(actions == 0)[0]
+        indices_left = np.where(actions == 4)[0]
+        indices_right = np.where(actions == 3)[0]
+        num_noop_touse = (len(indices_left)+len(indices_right))/2
+        logger.info("num_noop_touse = {}".format(num_noop_touse))
+        indices_noop = np.random.choice(indices_noop_all, 
+                                        size=num_noop_touse,
+                                        replace= False)
+        # This is the final set of indices to use for train/valid/test data.
+        indices_all = np.concatenate((indices_noop, indices_left, indices_right))
+    
+    elif game_name == "space_invaders":
+        indices_noop_all = np.where(actions == 0)[0]
+        indices_noop = np.random.choice(indices_noop_all, 
+                                        size=len(indices_noop_all)/3,
+                                        replace= False)
+        indices_fire   = np.where(actions == 1)[0]
+        indices_left   = np.where(actions == 4)[0]
+        indices_right  = np.where(actions == 3)[0]
+        indices_fleft  = np.where(actions == 12)[0]
+        indices_fright = np.where(actions == 11)[0]
+        # This is the final set of indices to use for train/valid/test data.
+        indices_all = np.concatenate((indices_noop, indices_fire,
+                                      indices_left, indices_right,
+                                      indices_fleft, indices_fright))
 
-    # This is the final set of indices to use for train/valid/test data.
-    indices_all = np.concatenate((indices_noop, indices_left, indices_right))
     np.random.shuffle(indices_all)
     assert len(indices_all) <= len(actions)
     return indices_all
@@ -300,6 +328,8 @@ def create_test_valid_train(game_name, indices, ratio, raw_data_dir, final_data_
     a_map = {}
     if (game_name == "breakout"):
         a_map = {0:0, 4:1, 3:2}
+    elif (game_name == "space_invaders"):
+        a_map = {0:0, 1:1, 4:2, 3:3, 12:4, 11:5}
     else:
         raise ValueError("game_name not supported")
 
@@ -351,7 +381,8 @@ if __name__ == "__main__":
     a set of balanced indices 
     """
 
-    game_name = "breakout"
+    game_name = "space_invaders"
+    logger.info("game_name = {}".format(game_name))
     output_dir = "output/" +game_name
     raw_data_dir = "data_raw/" +game_name
     final_data_dir = "final_data/" +game_name
@@ -360,9 +391,9 @@ if __name__ == "__main__":
     downsample_all(game_name, output_dir, raw_data_dir) 
 
     # Second: subsample these to balance dataset and save into new arrays.
-    # indices = sample_indices(game_name, raw_data_dir)
-    # ratio = np.array([0.76, 0.04, 0.2])
-    # create_test_valid_train(game_name, indices, ratio, raw_data_dir, final_data_dir)
+    indices = sample_indices(game_name, raw_data_dir)
+    ratio = np.array([0.76, 0.04, 0.2])
+    create_test_valid_train(game_name, indices, ratio, raw_data_dir, final_data_dir)
 
     # A quick reminder at the end to save the log.
     logger.info("All done. Rename log.txt if you want to save the log." \
