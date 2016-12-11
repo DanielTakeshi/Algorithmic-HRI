@@ -1,0 +1,110 @@
+\usepackage{amsmath,graphics}
+\usepackage{amssymb} 
+\usepackage{nicefrac, multirow}
+\usepackage{tikz}
+\usepackage{bigstrut}
+\setlength\bigstrutjot{3pt}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\usepackage{subfig}
+\usepackage{textcomp}
+\usetikzlibrary{backgrounds}
+\numberwithin{equation}{section} \newtheorem{thm}{Theorem}[section]  
+\newtheorem{cor}[thm]{Corollary}    % Corollary environment
+\newtheorem{lem}[thm]{Lemma}        % Lemma environment
+\newtheorem{dfn}[thm]{Definition}        % Lemma environment
+\newtheorem{prop}[thm]{Proposition}  % Proposition environment
+\newtheorem{rem}[thm]{Remark}  % Proposition environment
+\newtheorem{con}[thm]{Conjecture}  % Proposition environment
+\newcommand{\cS}{\mathcal{S}}
+\newcommand{\cR}{\mathcal{R}}
+\newcommand{\cD}{\mathcal{D}}
+\newcommand{\cN}{\mathcal{N}}
+\newcommand{\ceq}{\ensuremath{\mathrel{\stackrel{\mathrm{def}}{=}}}} 
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\Var}{Var}
+\newcommand{\rd}{{\mathrm d}}
+\newcommand{\p}{\partial}
+\tikzstyle{every node}=[font=\small]
+\usepackage{filemod}
+\newcommand{\includetikz}[2]{%
+\tikzsetnextfilename{#2}%
+    \filemodCmp{#1#2.tikz}{#1tikz/#2.pdf}%
+        {\tikzset{external/remake next}}{}%
+    \input{#1#2.tikz}%
+}
+
+\DeclareMathOperator{\J}{J} 
+\DeclareMathOperator{\clamp}{clamp} 
+\DeclareMathOperator{\interior}{int} 
+\DeclareMathOperator{\D}{D} 
+\DeclareMathOperator{\Div}{div} 
+\DeclareMathOperator{\Sgn}{Sgn} 
+\DeclareMathOperator{\Hom}{Hom} 
+\DeclareMathOperator{\rank}{rank} 
+\DeclareMathOperator{\Vol}{Vol}
+\DeclareMathOperator{\Area}{Area}
+\DeclareMathOperator{\dVol}{dVol}
+\DeclareMathOperator{\supp}{supp} 
+\DeclareMathOperator{\Int}{Int} 
+\DeclareMathOperator{\Conv}{Conv} 
+\DeclareMathOperator{\Cone}{Cone} 
+\DeclareMathOperator{\Ker}{Ker} 
+\DeclareMathOperator{\Span}{Span} 
+\DeclareMathOperator{\Min}{Min} 
+\newcommand{\bone}{\mathbf{1}}
+\newcommand{\bC}{\mathbb{C}}
+\DeclareMathOperator{\tr}{tr} 
+\newcommand{\bR}{\mathbb{R}} 
+\newcommand{\bZ}{\mathbb{Z}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}
+\newcommand{\balpha}{\boldsymbol{\alpha}}
+\newcommand{\bE}{\mathbb{E}}
+\newcommand{\bV}{\mathbb{V}}
+\newcommand{\bI}{\mathbb{I}}
+\newcommand{\bQ}{\mathbb{Q}}
+\newcommand{\bX}{\mathbb{X}}
+\newcommand{\bK}{\mathbb{K}}
+\newcommand{\bL}{\mathbb{L}} 
+\newcommand{\bB}{\mathbb{B}} 
+\newcommand{\bT}{\mathbb{T}} 
+\newcommand{\bN}{\mathbb{N}}
+\newcommand{\bU}{\mathbb{U}}
+\newcommand{\cJ}{\mathcal{J}}
+\newcommand{\cI}{\mathcal{I}}
+\newcommand{\bS}{\mathbb{S}}
+\newcommand{\cL}{\mathcal{L}}
+\newcommand{\cF}{\mathcal{F}}
+\newcommand{\cH}{\mathcal{H}}
+\newcommand{\cU}{\mathcal{U}}
+\newcommand{\cK}{\mathcal{K}}
+\newcommand{\cB}{\mathcal{B}}
+\newcommand{\cV}{\mathcal{V}}
+\newcommand{\cZ}{\mathcal{Z}}
+\newcommand{\cW}{\mathcal{W}}
+\newcommand{\cO}{\mathcal{O}} 
+\newcommand{\cC}{\mathcal{C}}
+\newcommand{\cT}{\mathcal{T}}
+\newcommand{\bF}{\mathbb{F}}
+\newcommand{\cA}{\mathcal{A}}
+\newcommand{\cM}{\mathcal{M}}
+\newcommand{\cG}{\mathcal{G}}
+\newcommand{\cKG}{\mathcal{KG}}
+\renewcommand{\phi}{\varphi}
+\renewcommand{\div}{\mbox{div}}
+\newcommand{\ve}{\varepsilon}
+\newcommand{\norm}[1]{\lVert #1 \rVert}
+\newcommand{\abs}[1]{\left| #1 \right|}
+\newcommand{\ov}[1]{\overline{#1}}
+\newcommand{\diff}[4]{\left.\left.\frac{\operatorname{d}}{\operatorname{d}#1}\right.^{#2}#3\right|_{#4}}
+\renewcommand{\geq}{\geqslant}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\ge}{\geqslant}
+\renewcommand{\le}{\leqslant}
+
+\newcommand{\furlp}[1]{\colorbox{blue!10}{\href{run:/home/fulong/academia/library/papers/#1.pdf}{D}}}
+\newcommand{\furlb}[1]{\colorbox{blue!10}{\href{run:/home/fulong/academia/library/books/#1.pdf}{D}}}
+\newcommand{\fcitep}[1]{\cite{#1}\mbox{\furlp{#1}}}
+\newcommand{\fciteb}[1]{\cite{#1}\mbox{\furlb{#1}}}
+% we can now use cite as before
