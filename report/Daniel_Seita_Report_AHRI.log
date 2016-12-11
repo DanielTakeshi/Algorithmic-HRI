@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=pdflatex 2013.5.30)  11 DEC 2016 14:28
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=pdflatex 2013.5.30)  11 DEC 2016 14:36
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -997,27 +997,30 @@ File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 <figures/empty.png, id=27, 1.00375pt x 1.00375pt>
 File: figures/empty.png Graphic file (type png)
  <use figures/empty.png>
-Package pdftex.def Info: figures/empty.png used on input line 226.
+Package pdftex.def Info: figures/empty.png used on input line 248.
 (pdftex.def)             Requested size: 151.76854pt x 152.3359pt.
 File: figures/empty.png Graphic file (type png)
 
 <use figures/empty.png>
-Package pdftex.def Info: figures/empty.png used on input line 247.
+Package pdftex.def Info: figures/empty.png used on input line 269.
 (pdftex.def)             Requested size: 151.76854pt x 152.3359pt.
  [2 <./figures/dqn_with_human_data_graph.png>]
-(./Daniel_Seita_Report_AHRI.bbl [3 <./figures/empty.png (PNG copy)>]
+(./Daniel_Seita_Report_AHRI.bbl
+Underfull \vbox (badness 2393) has occurred while \output is active []
+
+ [3 <./figures/empty.png (PNG copy)>]
 Underfull \hbox (badness 2961) in paragraph at lines 108--114
 \OT1/ptm/m/n/8 Driess-che, J. Schrit-twieser, I. Antonoglou, V. Pan-neer-shel-v
 am,
  []
 
 )
-Underfull \hbox (badness 2772) in paragraph at lines 333--337
+Underfull \hbox (badness 2772) in paragraph at lines 355--359
 []\OT1/ptm/m/n/10 OpenAI en-vi-ron-ments au-to-mat-i-cally re-peat ac-tions
  []
 
 
-Overfull \hbox (182.37918pt too wide) in paragraph at lines 344--344
+Overfull \hbox (182.37918pt too wide) in paragraph at lines 366--366
  []        \OT1/pcr/m/n/10 [max(T-1, T), max(T-3, T-4), max(T-7, T-8), max(T-11
 , T-12)] 
  []
@@ -1038,10 +1041,10 @@ Before submitting the final camera ready copy, remember to:
 
 ] (./Daniel_Seita_Report_AHRI.aux) ) 
 Here is how much of TeX's memory you used:
- 21006 strings out of 493315
- 481019 string characters out of 6137904
- 674071 words of memory out of 5000000
- 23997 multiletter control sequences out of 15000+600000
+ 21007 strings out of 493315
+ 481036 string characters out of 6137904
+ 674080 words of memory out of 5000000
+ 23998 multiletter control sequences out of 15000+600000
  42664 words of font info for 90 fonts, out of 8000000 for 9000
  957 hyphenation exceptions out of 8191
  56i,9n,81p,761b,609s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -1063,7 +1066,7 @@ r/local/texlive/2013/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/te
 xlive/2013/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/local/texlive/201
 3/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2013/texmf-di
 st/fonts/type1/urw/times/utmri8a.pfb>
-Output written on Daniel_Seita_Report_AHRI.pdf (5 pages, 213652 bytes).
+Output written on Daniel_Seita_Report_AHRI.pdf (5 pages, 214530 bytes).
 PDF statistics:
  96 PDF objects out of 1000 (max. 8388607)
  68 compressed objects within 1 object stream
