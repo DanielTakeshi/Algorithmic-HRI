@@ -197,32 +197,35 @@ executed via these random actions. We call our method \emph{Human-Guided DQN}.
 
 \subsection{Methodology and Implementation}\label{ssec:implementation}
 
-There are three major steps for the experiments: human gameplay, developing a
-classifier to map from game frames to actions, and then plugging it into DQN. 
+There are three major steps for the experiments: getting human gameplay,
+developing a classifier to map from game frames to actions, and then plugging it
+into DQN. 
 
 \subsubsection{Human Gameplay} To enable human gameplay, we modify the Arcade
 Learning Environment (ALE)~\cite{bellemare13arcade} to enable a human to play.
 Each time step, we save the RGB game screen, the action taken, and the reward
 received. The human player is the author of this paper, who is an expert in
 Breakout and Space Invaders with roughly twenty hours and eight hours of prior
-gampeplay experience for these respective games.\footnote{This is in contrast to
-the methodology from~\cite{mnih-dqn-2015}, where human experts had only two
-hours of training.} We ultimately collected human gameplay data based on six
-hours of Breakout and five hours of Space Invaders. Due to the time-consuming
-nature of this work, we leave analysis on other Atari games to future work.
+gampeplay experience for these respective
+games.\footnote{In~\cite{mnih-dqn-2015}, human experts had only two hours of
+training.} We ultimately collected human gameplay data based on six hours of
+Breakout and five hours of Space Invaders. Due to the time-consuming nature of
+this work, we leave analysis on other Atari games to future work.
 
 \subsubsection{Developing a Classifier} With the data from the human gameplay,
 we apply all the standard preprocessing steps performed in~\cite{mnih-dqn-2015},
 such as frame skipping and taking four consecutive (but non-skipped) frames to
 form a state. We then build a CNN using the same architecture as the Q-Network
 from~\cite{mnih-dqn-2015}, which uses three convolutional layers followed by two
-fully connected layers, and has the number of outputs equal to the number of
-actions chosen. As mentioned in Section~\ref{ssec:algorithm}, however, we filter
-the actions so that those which happen infrequently or a fixed amount of times
-per game are not considered (instead, they are played via the random actions or
-the standard Q-Network in DQN). For Deep Learning code, we use the Theano
-library~\cite{2016arXiv160502688short}.  Our classifier's code and supporting
-documents are
+fully connected layers (though we add a softmax at the end to get a
+distribution). The network has the number of output nodes equal to the number of
+actions chosen, thus allowing all $Q(\phi_i,a_j)$ values to be determined for
+all actions $a_j$ during one pass with $\phi_i$ as input.  As mentioned in
+Section~\ref{ssec:algorithm}, however, we filter the actions so that those which
+are designed to happen extremely infrequently are not considered (instead, they
+are played via the random actions or the standard Q-Network in DQN). For Deep
+Learning code, we use the Theano library~\cite{2016arXiv160502688short}.  Our
+classifier's code and supporting documents are
 open-source.\footnote{\url{https://github.com/DanielTakeshi/Algorithmic-HRI}}
 
 \subsubsection{The DQN Algorithm} Upon developing a classifier, we rigorously
@@ -240,24 +243,24 @@ GitHub.\footnote{\url{https://github.com/DanielTakeshi/deep_q_rl}}
 
 \subsection{Classifier Performance}\label{ssec:results_classifier}
 
-% Daniel: I think I want to hold off on this until I regenerate the Breakout
-% data using the correct cropping method.
+% Daniel: this was done with Breakout and the CORRECT cropping method,
+% fortunately!
 \begin{table}[!t]
 \renewcommand{\arraystretch}{1.3}
-\caption{Classifier Performance on Breakout}
+\caption{Tuning Classifiers on Breakout}
 \label{tab:breakout}
 \centering
 \begin{tabular}{c c c c | c c c c}
 \hline
 Reg.  & $\lambda$ & Train & Valid & Reg.  & $\lambda$ & Train & Valid \\
 \hline
-$L_1$ & 0.00005   &   &   & $L_2$ & 0.00005   &   &  \\
-$L_1$ & 0.0001    &   &   & $L_2$ & 0.0001    &   &  \\
-$L_1$ & 0.0005    &   &   & $L_2$ & 0.0005    &   &  \\
-$L_1$ & 0.005     &   &   & $L_2$ & 0.001     &   &  \\
-$L_1$ & 0.001     &   &   & $L_2$ & 0.005     &   &  \\
-$L_1$ & 0.05      &   &   & $L_2$ & 0.05      &   &  \\
-$L_1$ & 0.01      &   &   & $L_2$ & 0.01      &   &  \\
+$L_1$ & 0.00005   & \textbf{99.2}  & 82.1  & $L_2$ & 0.00005   & \textbf{99.6}  & 83.5 \\
+$L_1$ & 0.0001    & 98.9  & 82.2  & $L_2$ & 0.0001    & 99.4  & 83.1 \\
+$L_1$ & 0.0005    & 87.6  & \textbf{85.6}  & $L_2$ & 0.0005    & \textbf{99.6}  & 83.2 \\
+$L_1$ & 0.005     & 85.1  & 83.9  & $L_2$ & 0.001     & 99.0  & 83.1 \\
+$L_1$ & 0.001     & 85.0  & 84.4  & $L_2$ & 0.005     & 95.6  & 84.6 \\
+$L_1$ & 0.05      & 33.7  & 36.8  & $L_2$ & 0.05      & 84.6  & 84.1 \\
+$L_1$ & 0.01      & 77.6  & 76.0  & $L_2$ & 0.01      & 88.3  & \textbf{86.3} \\
 \hline
 \end{tabular}
 \end{table}
@@ -265,7 +268,7 @@ $L_1$ & 0.01      &   &   & $L_2$ & 0.01      &   &  \\
 % Whew ... I think these numbers should be all correct.
 \begin{table}[!t]
 \renewcommand{\arraystretch}{1.3}
-\caption{Classifier Performance on Space Invaders}
+\caption{Tuning Classifiers on Space Invaders}
 \label{tab:space_invaders}
 \centering
 \begin{tabular}{c c c c | c c c c}
@@ -316,16 +319,14 @@ actions.  Thus, Breakout results in a balanced three-way classification task,
 while Space Invaders results in a (less-balanced) six-way classification task.
 Figure~\ref{fig:action_distribution} shows the action distributions.
 
-We built a CNN following the architecture from~\cite{mnih-dqn-2015} with an
-extra final softmax layer. The number of output nodes is equal to the number of
-actions, thus allowing all $Q(\phi_i,a_j)$ values to be determined for all
-actions $a_j$ during one pass with $\phi_i$ as input. We split the data into
-training, validation, and testing sets, and tuned weights via either $L_1$ or
-$L_2$ regularization based on validation set performance.\footnote{In this
-setting, it is probably OK to tune on the test set, but we decided to stick to
-best practices and tune on the validation set. For both games, the
-best-performing settings on the validation set also corresponded to the top
-settings for the test sets.}
+As described in Section~\ref{ssec:implementation}, we built a CNN following the
+architecture from~\cite{mnih-dqn-2015}. We split the data into training,
+validation, and testing sets, and tuned weights via either $L_1$ or $L_2$
+regularization based on validation set performance.\footnote{In this setting, it
+is probably OK to tune on the test set, but we decided to stick to best
+practices and tune on the validation set. For both games, the best-performing
+settings on the validation set also corresponded to the top settings for the
+test sets.}
 
 Tuning results are shown in Tables~\ref{tab:breakout}
 and~\ref{tab:space_invaders}, with bold indicating the best settings. With low
@@ -354,9 +355,12 @@ XXX is correctly predicted (XXX confidence).
 We further investigate the top-performing Breakout and Space Invaders classifier
 by visually inspecting example outputs. Figure~\ref{fig:example_game_frames}
 demonstrates examples of two states $\phi$ for each of the two games, where the
-classifier (correctly) predicted the action the human player took.
+classifier (correctly) predicted the action the human player took with high
+confidence (as determined by the softmax probability distribution).
 
-TODO more analysis here ...
+In Breakout, we see that ...
+
+In Space Invaders, ...
 
 
 
@@ -368,9 +372,12 @@ TODO more analysis here ...
 \centering
 \includegraphics[width=0.30\textwidth]{figures/empty.png}
 \caption{\footnotesize
-This will be another full-page figure. Here I'll hope to have the plots
-comparing my results with DQN results, with both action-value and rewards. Use
-moving averages. I may need a second one of these.
+Plots which compare the performance of standard DQN (black) versus Human-Guided
+DQN (blue) on Breakout (first two subplots) and Space Invaders (last two
+subplots). The metrics used are the average reward obtained per episode
+and the average $Q$-value encountered during gameplay. Since the outcome is
+extremely noisy, the reward per episode is a smoothed version, computed with
+$avg = 0.7\cdot avg + 0.3\cdot newscores$.
 }
 \label{fig:human_dqn_performance}
 \end{figure*}
@@ -379,15 +386,35 @@ moving averages. I may need a second one of these.
 \centering
 \includegraphics[width=0.30\textwidth]{figures/empty.png}
 \caption{\footnotesize
-TODO hopefully this will be the SI with human but with longer exploration
-periods.
+A comparison of the rewards obtained via standard DQN (black) versus
+Human-Guided DQN (blue) on Space Invaders. This is similar to the Space Invaders
+subplots of Figure~\ref{fig:human_dqn_performance}, except that the exploration
+period is 10x longer and the number of epochs has been reduced from 200 to 80.
+(The exploration phase ``ends'' after epoch 40, which is when $\epsilon=0.1$.)
 }
 \label{fig:sp_inv_longer_exploration}
 \end{figure}
 
+TODO
+
+We ran our experiments on a single computer with an NVIDIA TITAN GPU (with
+Pascal).
+
+TODO
+
 Figure~\ref{fig:human_dqn_performance}
 
-Figure~\ref{fig:sp_inv_longer_exploration}.
+One factor which hinders the previous analysis\footnote{This was due to some
+extra settings inside the open source DQN code which were not obvious at first
+glance.} is that the exploration period is likely too short for us to discern
+any noticeable improvements. The exploration period consists of when
+$\epsilon>0.1$, and for the previous settings, that ends after the fourth of 200
+epochs. This does not give us enough data points, so we re-ran the Space
+Invaders experiment using an exploration period 10x longer. Due to computational
+limitations, we limited the runs to 80 epochs total.
+
+Figure~\ref{fig:sp_inv_longer_exploration} shows the results with the improved
+experiment settings. \textbf{TODO ANALYSIS}
 
 
 
@@ -400,15 +427,15 @@ to boost the performance of DQN agents on Atari games. We collected many hours
 of human expert gameplay data on Breakout and Space Invaders, and provided
 evidence that a CNN can largely predict the human expert's actions. Our
 Human-Guided DQN utilized this classifier for exploration. Unfortunately, the
-results did not substantially improve, but we believe there is still potential
-for human gameplay to boost performance. In future work, we will first run the
-algorithm with a longer exploration phase. Second, we will try using \emph{human
-experience replay}, i.e. combining the usual experience replay dataset with the
-human gameplay data. Third, our more elaborate goal is to shift gears and work
-on training attention models~\cite{NIPS2014_5542,icml2015_xuc15}, the idea being
-that for these games, there are only a few important signals that matter for
-rewards, and this can be trained into an attention model, which hopefully can be
-used to improve DQN performance.
+results did not substantially improve, but we believe there is still untapped
+potential in this project. In future work, we will run Human-Guided DQN with
+longer exploration phases. Second, we will try using \emph{human experience
+replay}: combining the usual experience replay with subsampled human gameplay
+data. Finally, a more elaborate goal is to work on training attention
+models~\cite{NIPS2014_5542,icml2015_xuc15}, the idea being that for these games,
+there are only a few important signals that matter for rewards, and this can be
+trained into an attention model, which hopefully can be used to improve DQN
+performance.
 
 \bibliographystyle{abbrv}
 \bibliography{Daniel_Seita_Report_AHRI}
