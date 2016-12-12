@@ -6,7 +6,6 @@
 \title{\LARGE \bf Human-Guided DQN: Using Expert Human Gameplay Data on Atari
 2600 Games for Deep Reinforcement Learning}
 \author{Daniel Seita \\
-Computer Science Division\\
 University of California, Berkeley\\
 Email: seita@berkeley.edu
 }
@@ -18,33 +17,28 @@ Email: seita@berkeley.edu
 Deep Reinforcement Learning is arguably the hottest and most popular subfield of
 Artificial Intelligence. In large part, this was popularized due to the success
 of agents in learning how to play Atari games from scratch, given only the input
-screen pixels and the game reward as input -- in other words, exact how a human
-would learn how to play. While there has been substantial follow-up work on how
-to improve the performance of agents in such games, there has been very little
-work that incorporates human guidance in the process. In this paper, we report
-our progress about an idea for using human expert gameplay on Atari 2600 games
-to boost the performance of Deep Reinforcement Learning agents. Specifically, we
-focus on the Deep Q-Network algorithm, and during the exploration stage for
-Q-Learning, we explore how substituting the random exploration with human
-actions impacts gameplay. We report on progress for two Atari 2600 games
-(Breakout and Space Invaders) and show the potential for this idea to eventually
-improve the performance of DQN agents.
+screen pixels and the game reward as input.  While there has been substantial
+follow-up work on how to improve the Deep Q-Network (DQN) algorithm, there has
+not been much focus on how to utilize human guidance. In this paper, we report
+progress about an idea for using human expert gameplay on Atari games to boost
+DQN. During the exploration stage for Q-Learning, we substitute the random
+exploration with human actions. We investigate and discuss performance on two
+Atari games (Breakout and Space Invaders).
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}\label{sec:introduction}
 
-The now-popular technique of deep learning can be used for challenging tasks in
-reinforcement learning, where the job of an AI agent is not to perform
-``simple'' classification as in~\cite{AlexNet2012}, but to learn from
-high-dimensional, correlated data with a scalar reward signal that is noisy and
-may exhibit complicated, long-term rewards. For instance,~\cite{mnih-dqn-2015}
-combined model-free reinforcement learning with deep learning techniques to
-develop an AI agent capable of learning how to play several Atari 2600 games at
-a level matching or exceeding human performance. The AI only learned from the
-game frames and the score, just like how a human would learn. Similar techniques
-rely on Monte Carlo Tree Search~\cite{nips-atari-2014}, including the
-well-publicized AlphaGo AI agent~\cite{silver-alphago-2016}.
+Deep learning can be used for challenging tasks in reinforcement learning, where
+the job of AI is not to perform ``simple'' classification as
+in~\cite{AlexNet2012}, but to learn from high-dimensional, correlated data with
+a scalar reward signal that is noisy and exhibits complicated, long-term
+rewards. Most famously,~\cite{mnih-dqn-2015} combined model-free reinforcement
+learning with deep learning techniques to develop an AI agent capable of
+learning how to play Atari 2600 games at a level matching or exceeding human
+performance. The AI only learned from the game frames and the score, just like
+how a human would learn. Similar techniques combine deep learning with Monte
+Carlo Tree Search~\cite{nips-atari-2014,silver-alphago-2016}.
 
 Nonetheless, despite the progress advanced by neural networks, many questions
 still remain about how exactly neural networks learn, and it is still unclear if
@@ -114,26 +108,22 @@ as Breakout. It was, however, weak on games such as Montezuma's Revenge, which
 requires substantial long-term strategy.
 
 There has been a surge of follow-up work for training agents to play Atari
-games.  In~\cite{nips-atari-2014}, they augment training using data collected
-\emph{offline} through the use of Monte-Carlo tree search planning. The
-``offline player,'' while substantially better than DQN, cannot play in real
-time, but can be used to improve DQN's performance. The work
-of~\cite{Schaul2016} introduces prioritized experience replay to
-train DQN agents faster since the most important transitions (with respect to
+games. For instance,~\cite{Schaul2016} introduces prioritized experience replay
+to train DQN agents faster since the most important transitions (with respect to
 temporal difference error) would be considered more frequently. It is also
-possible to boostrap DQN~\cite{NIPS2016_6501} by borrowing techniques from
-the statistical method of boostrapping.
+possible to boostrap DQN~\cite{NIPS2016_6501} by borrowing techniques from the
+statistical method of boostrapping.
 
 Th work of~\cite{DBLP:conf/icml/WangSHHLF16} presents a different neural network
 architecture specialized for reinforcement learning,
 and~\cite{DBLP:conf/aaai/HasseltGS16} proposes Double-DQN, which mitigates
 the problem of the ``max'' operator using the same values to both select and
-evaluate an action (thus leading to overoptimistic value estimates). At the time
-of publication, it was the highest-quality DQN available, though it has since
-been surpassed by~\cite{DBLP:conf/icml/MnihBMGLHSK16}, which proposes
+evaluate an action (thus leading to overly optimistic value estimates). At the
+time of publication, it was the highest-quality DQN available, though it has
+since been surpassed by~\cite{DBLP:conf/icml/MnihBMGLHSK16}, which proposes
 asynchronous variants of DQN algorithms and uses an asynchronous actor-critic
-model to achieve the state of the art Atari results. These results were finally
-surpassed by the current state of the art
+model to achieve state of the art Atari results. These results were finally
+surpassed by the \emph{current} state of the art
 in~\cite{DBLP:journals/corr/JaderbergMCSLSK16}.
 
 % Daniel: I better double check of all of these.
@@ -151,8 +141,7 @@ along with that of cooperation with humans~\cite{NIPS2016_6420}.
 
 The aim of this work is to resolve the gap between DQN (and more generally, Deep
 Reinforcement Learning) and Learning from Demonstrations by augmenting the DQN
-algorithm with data on human gameplay. We also hope to better understand the
-connection between human learning versus deep learning.
+algorithm with guidance from human gameplay.
 
 
 
@@ -175,8 +164,8 @@ $\epsilon$ decay during Q-Learning. During the exploration stage, instead of
 playing random actions with probability $\epsilon$, we perform the action chosen
 from our trained classifier with probability $\epsilon-0.1$, up until 1 million
 steps, upon which time our classifier is ignored. Note that, as described in
-\textbf{TODO TODO}, we adjust the number of steps taken to investigate the
-impact of a longer exploration period.
+Section~\ref{sec:results_p2}, we sometimes adjust the number of steps taken to
+investigate the impact of a longer exploration period.
 }
 \label{fig:human-guided-dqn}
 \end{figure}
@@ -324,30 +313,25 @@ Breakout classifier and subsample NOOP actions. For Space Invaders, the FIRE
 actions (also including FIRE LEFT and FIRE RIGHT) occur more frequently, so we
 included them in the classifier, but still only kept a third of the NOOP
 actions.  Thus, Breakout results in a balanced three-way classification task,
-while Space Invaders results in a six-way classification task, with a slightly
-more skewed action distribution.  Figure~\ref{fig:action_distribution} shows the
-action distributions.
+while Space Invaders results in a (less-balanced) six-way classification task.
+Figure~\ref{fig:action_distribution} shows the action distributions.
 
-We built a CNN following the architecture from~\cite{mnih-dqn-2015}. The number
-of output layers is equal to the number of actions.  This allows all
-$Q(\phi_i,a_j)$ values to be determined for all actions $a_j$ during one pass
-with $\phi_i$ as input. We applied the softmax at the end. We split the data
-into training, validation, and testing sets, and tuned weights via either $L_1$
-or $L_2$ regularization. We settled on the regularization method and parameter
-value $\lambda$ via validation set performance.\footnote{In this setting, it is
-probably OK to tune on the test set, but we decided to stick to best practices
-and tune on the validation set.  For both games, the best-performing settings on
-the validation set also corresponded to the best performing testing sets.}
+We built a CNN following the architecture from~\cite{mnih-dqn-2015} with an
+extra final softmax layer. The number of output nodes is equal to the number of
+actions, thus allowing all $Q(\phi_i,a_j)$ values to be determined for all
+actions $a_j$ during one pass with $\phi_i$ as input. We split the data into
+training, validation, and testing sets, and tuned weights via either $L_1$ or
+$L_2$ regularization based on validation set performance.\footnote{In this
+setting, it is probably OK to tune on the test set, but we decided to stick to
+best practices and tune on the validation set. For both games, the
+best-performing settings on the validation set also corresponded to the top
+settings for the test sets.}
 
-The Breakout and Space Invaders tuning results are shown in
-Tables~\ref{tab:breakout} and~\ref{tab:space_invaders}, respectively (bold
-indicates the best settings). With low $\lambda$, the training can get
-arbitrarily high performance, but performs poorly on the validation set. For
-both games, we use only the net which performed best on the validation set in
-our Human-Guided DQN.
-
-
-
+Tuning results are shown in Tables~\ref{tab:breakout}
+and~\ref{tab:space_invaders}, with bold indicating the best settings. With low
+$\lambda$, the net gets arbitrarily high performance on the training data, but
+performs poorly otherwise. For both games, we keep only the best-performing net
+on the validation set.
 
 \subsection{Classifier Investigation}
 
@@ -355,16 +339,25 @@ our Human-Guided DQN.
 \centering
 \includegraphics[width=0.30\textwidth]{figures/empty.png}
 \caption{\footnotesize
-This will represent examples of game frames (i.e. sequence of 4 game frames) for
-classifier, just like I did in the presentation. I'll want the full width (i.e.
-two columns) for this, with good and bad examples from each game. More details
-should be provided in a table with tuned values.
+Four examples of ``states'' $\phi_t = (s_{t-3},s_{t-2},s_{t-1},s_t)$ encountered
+during human gameplay, two for Breakout (left) and two for Space Invaders
+(right). Top left: the action XXX is correctly predicted (XXX confidence).
+Bottom left: the action XXX is correctly predicted (XXX confidence). Top right:
+the action XXX is correctly predicted (XXX confidence). Bottom right: the action
+XXX is correctly predicted (XXX confidence).
 }
 \label{fig:example_game_frames}
 \end{figure*}
 
-Now provide example images? Results are shown in
-Figure~\ref{fig:example_game_frames}.
+The distribution of accuracy results [...] (this is where I say
+the per-class results).
+
+We further investigate the top-performing Breakout and Space Invaders classifier
+by visually inspecting example outputs. Figure~\ref{fig:example_game_frames}
+demonstrates examples of two states $\phi$ for each of the two games, where the
+classifier (correctly) predicted the action the human player took.
+
+TODO more analysis here ...
 
 
 
@@ -399,27 +392,24 @@ Figure~\ref{fig:sp_inv_longer_exploration}.
 
 
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}\label{sec:conclusions}
 
 In this work, we have made efforts to use Learning from Demonstration techniques
-to boost the performance of DQN agents on the problem of playing Atari games. We
-collected many hours of human expert gameplay data on Breakout and Space
-Invaders, and provided extensive evidence to show that a convolutional
-neural network can, to a large extent predict the action of the human expert
-given a sequence of game frames. A DQN agent then used this classifier as part
-of our human-guided DQN algorithm. While the DQN results do not improve using
-our algorithm, we believe there is still potential for algorithmic improvements
-in this work. In future work, we will first run the algorithm with a larger
-number of exploration steps to better see the effects of the DQN agent.  Second,
-we will try the concept of \emph{human experience replay} and combine experience
-replay from the agent's exploration with that of a human. Third, our more
-elaborate goal is to shift gears and work on training attention
-models~\cite{NIPS2014_5542,icml2015_xuc15}, the idea being that for these games,
-there are only a few important signals that matter for score (e.g., is the ball
-near the paddle in Breakout \emph{and} moving downwards?), and this can be
-trained into an attention model. We will explore these directions of work in the
-coming months.
+to boost the performance of DQN agents on Atari games. We collected many hours
+of human expert gameplay data on Breakout and Space Invaders, and provided
+evidence that a CNN can largely predict the human expert's actions. Our
+Human-Guided DQN utilized this classifier for exploration. Unfortunately, the
+results did not substantially improve, but we believe there is still potential
+for human gameplay to boost performance. In future work, we will first run the
+algorithm with a longer exploration phase. Second, we will try using \emph{human
+experience replay}, i.e. combining the usual experience replay dataset with the
+human gameplay data. Third, our more elaborate goal is to shift gears and work
+on training attention models~\cite{NIPS2014_5542,icml2015_xuc15}, the idea being
+that for these games, there are only a few important signals that matter for
+rewards, and this can be trained into an attention model, which hopefully can be
+used to improve DQN performance.
 
 \bibliographystyle{abbrv}
 \bibliography{Daniel_Seita_Report_AHRI}
