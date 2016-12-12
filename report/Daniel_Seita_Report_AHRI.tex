@@ -89,14 +89,14 @@ in a table is impractical.  Therefore, the $Q(s,a)$ values are
 \emph{approximated} by a neural network parameterized by its weights $\theta$,
 and it is $\theta$ that the Q-Learning algorithm must learn.
 
-In practice,~\cite{mnih-dqn-2015} uses a variant of online Q-Learning (with an
-$\epsilon$-greedy policy for exploration) with two key ideas: experience replay
-for breaking the correlation among data points and a separate target network
-for generating the target terms in Equation~\ref{eq:bellman} to increase the
-algorithm's stability. The DQN trained with this variant of Q-Learning was able
-to excel at many Atari games, especially fast-paced games with simple rules such
-as Breakout. It was, however, weak on games such as Montezuma's Revenge, which
-requires substantial long-term strategy.
+In practice,~\cite{mnih-dqn-2015} uses a variant of online Q-Learning with two
+key ideas: experience replay for breaking the correlation among data points and
+a separate target network for generating the target terms in
+Equation~\ref{eq:bellman} to increase the algorithm's stability. The DQN trained
+with this variant of Q-Learning was able to excel at many Atari games,
+especially fast-paced games with simple rules such as Breakout. It was, however,
+weak on games such as Montezuma's Revenge, which requires substantial long-term
+strategy.
 
 There has been a surge of follow-up work for training agents to play Atari
 games. For instance,~\cite{Schaul2016} introduces prioritized experience replay
@@ -121,18 +121,15 @@ in~\cite{DBLP:journals/corr/JaderbergMCSLSK16}.
 While there has been much work concerning the technical aspects of DQN and its
 variants, there has been very little work on incorporating human aspects
 specifically to Atari games, the only major work of which is
-from~\cite{DBLP:journals/corr/HosuR16}. Otherwise, however, this is a broader
-category of Learning from Demonstrations, a category which has been receiving
-more popularity including the seminal work of Maximum Entropy
-IRL~\cite{Ziebart_2008_6055} and DAGGER~\cite{DBLP:journals/jmlr/RossGB11}.
-There has been more recent work about adjusting humans and the loss
-function~\cite{conf/nips/KimFPP13}, human supervision of robotic
+from~\cite{DBLP:journals/corr/HosuR16}; we aim to rectify that with this
+research. Otherwise, this is a broader category of Learning from Demonstrations,
+a category which has been receiving more popularity including the seminal work
+of Maximum Entropy IRL~\cite{Ziebart_2008_6055} and
+DAGGER~\cite{DBLP:journals/jmlr/RossGB11}.  There has been more recent work
+about adjusting humans and the loss function~\cite{conf/nips/KimFPP13}, human
+supervision of robotic
 grasping~\cite{DBLP:journals/corr/LaskeyCLMKJDG16,DBLP:dblp_conf/icra/LaskeySHMPDG16}
 along with that of cooperation with humans~\cite{NIPS2016_6420}.
-
-The aim of this work is to resolve the gap between DQN (and more generally, Deep
-Reinforcement Learning) and Learning from Demonstrations by augmenting the DQN
-algorithm with guidance from human gameplay.
 
 
 
@@ -208,15 +205,15 @@ we apply all the standard preprocessing steps performed in~\cite{mnih-dqn-2015},
 such as frame skipping and taking four consecutive (but non-skipped) frames to
 form a state. We then build a CNN using the same architecture as the Q-Network
 from~\cite{mnih-dqn-2015}, which uses three convolutional layers followed by two
-fully connected layers (though we add a softmax at the end to get a
-distribution). The network has the number of output nodes equal to the number of
-actions chosen, thus allowing all $Q(\phi_i,a_j)$ values to be determined for
-all actions $a_j$ during one pass with $\phi_i$ as input.  As mentioned in
-Section~\ref{ssec:algorithm}, however, we filter the actions so that those which
-are designed to happen extremely infrequently are not considered (instead, they
-are played via the random actions or the standard Q-Network in DQN). For Deep
-Learning code, we use the Theano library~\cite{2016arXiv160502688short}.  Our
-classifier's code and supporting documents are
+fully connected layers. The network has the number of output nodes equal to the
+number of actions chosen, thus allowing all $Q(\phi_i,a_j)$ values to be
+determined for all actions $a_j$ during one pass with $\phi_i$ as input.  As
+mentioned in Section~\ref{ssec:algorithm}, however, we filter the actions so
+that those which are designed to happen extremely infrequently are not
+considered (instead, they are played via the random actions or the standard
+Q-Network in DQN). For Deep Learning code, we use the Theano
+library~\cite{2016arXiv160502688short}.  Our classifier's code and supporting
+documents are
 open-source.\footnote{\url{https://github.com/DanielTakeshi/Algorithmic-HRI}}
 
 \subsubsection{The DQN Algorithm} Upon developing a classifier, we rigorously
@@ -283,7 +280,7 @@ $L_1$ & 0.05      & 28.5  & 29.0  & $L_2$ & 0.05      & 64.7  & 64.0 \\
 \caption{\footnotesize
 The distribution of actions for Breakout (left) and Space Invaders (right)
 within all our data used for classification. This is the distribution obtained
-\emph{after} pre-processing steps to eliminate most NOOP actions. For Breakout,
+\emph{after} preprocessing steps to eliminate most NOOP actions. For Breakout,
 we randomly select $x$ NOOP actions out of the full set, where $x$ is the
 average of the LEFT and RIGHT action counts. For Space Invaders, we kept one
 third of the NOOP actions. F-L and F-R represent ``FIRE LEFT'' and ``FIRE
@@ -299,16 +296,16 @@ consecutive (non-skipped) grayscale images $\phi_i =
 (s_{i-3},s_{i-2},s_{i-1},s_i)$ and $a_i$ is the action chosen (by the human
 player) after observing game frame $s_i$.
 
-During normal human gameplay, the distribution of actions is skewed, presenting
-a challenge for training a classifier. In Breakout, the NOOP action tends to be
-chosen far more often than LEFT or RIGHT, and the FIRE action is designed to
-occur only five times a game. We therefore do not incorporate FIRE in our
-Breakout classifier and subsample NOOP actions. For Space Invaders, the FIRE
-actions (also including FIRE LEFT and FIRE RIGHT) occur more frequently, so we
-included them in the classifier, but still only kept a third of the NOOP
-actions.  Thus, Breakout results in a balanced three-way classification task,
-while Space Invaders results in a (less-balanced) six-way classification task.
-Figure~\ref{fig:action_distribution} shows the action distributions.
+During normal human gameplay, the distribution of actions is skewed. In
+Breakout, the NOOP action tends to be chosen far more often than LEFT or RIGHT,
+and the FIRE action is designed to occur only five times a game. We therefore do
+not incorporate FIRE in our Breakout classifier and we subsample NOOP actions.
+For Space Invaders, the FIRE actions (also including FIRE LEFT and FIRE RIGHT)
+occur more frequently, so we included them in the classifier, but still only
+kept a third of the NOOP actions.  Thus, Breakout results in a balanced
+three-way classification task, while Space Invaders results in a (less-balanced)
+six-way classification task.  Figure~\ref{fig:action_distribution} shows the
+action distributions.
 
 As described in Section~\ref{ssec:implementation}, we built a CNN following the
 architecture from~\cite{mnih-dqn-2015}. We split the data into training,
@@ -370,14 +367,14 @@ Percent & 68.1 & 61.5 & 87.3 & 87.2  & 13.8 & 27.1 \\
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.30\textwidth]{figures/empty.png}
+\includegraphics[width=1.00\textwidth]{figures/game_frame_examples.png}
 \caption{\footnotesize
 Four examples of ``states'' $\phi_t = (s_{t-3},s_{t-2},s_{t-1},s_t)$ encountered
 during human gameplay, two for Breakout (left) and two for Space Invaders
-(right). Top left: the action XXX is correctly predicted (XXX confidence).
-Bottom left: the action XXX is correctly predicted (XXX confidence). Top right:
-the action XXX is correctly predicted (XXX confidence). Bottom right: the action
-XXX is correctly predicted (XXX confidence).
+(right). Top left: the action LEFT is correctly predicted (99.7\% confidence).
+Bottom left: the action NOOP is correctly predicted (99.1\% confidence). Top
+right: the action LEFT is correctly predicted (99.1\% confidence). Bottom right:
+the action FIRE is correctly predicted (91.9\% confidence).
 }
 \label{fig:example_game_frames}
 \end{figure*}
@@ -385,12 +382,17 @@ XXX is correctly predicted (XXX confidence).
 We further investigate the top-performing Breakout and Space Invaders classifier
 by visually inspecting example outputs. Figure~\ref{fig:example_game_frames}
 demonstrates examples of two states $\phi$ for each of the two games, where the
-classifier (correctly) predicted the action the human player took with high
+classifier \emph{correctly} predicted the action the human player took with high
 confidence (as determined by the softmax probability distribution).
 
-In Breakout, we see that ...
-
-In Space Invaders, ...
+In Breakout, we see that the action LEFT is chosen in a state where the ball is
+moving towards the player and to the left. The NOOP action is chosen in a state
+where the ball was just hit and is moving up, thus meaning there is no need to
+move just yet. In Space Invaders, it is advantageous to clear out columns, and
+fortunately the classifier is able to detect this on our examples.  The LEFT
+action is chosen in a state which has just one ``alien'' on the left hand column
+so that the agent can shoot it. The FIRE action is chosen in a state where the
+agent has already cleared a few aliens in a column but has not yet cleared it.
 
 
 
