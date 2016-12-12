@@ -268,6 +268,8 @@ def sample_indices(game_name, raw_data_dir):
     actions = np.loadtxt(raw_data_dir+ "/actions_target.txt")
     (unique_a, counts_a) = np.unique(actions, return_counts=True)
     logger.info("\nUnique actions: {},\ncorresponding counts: {}".format(unique_a,counts_a))
+    logger.info("(Note that this is BEFORE applying processing such as "+
+        "removing extra NO-OP actions.)")
 
     # For Breakout, but noop, left, and right are consistent among games.
     if game_name == "breakout":
