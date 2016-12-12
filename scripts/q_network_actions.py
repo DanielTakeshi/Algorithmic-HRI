@@ -455,22 +455,25 @@ def do_analysis_testing_v1(i=0):
     Don't forget, vim numbers lines starting from 1, but it's 0-indexed!! This
     method lets me visually inspect an index and save its image via save_phi.
     """
-    #path = "final_data/breakout/"
-    path = "final_data/space_invaders/"
-    #aprobs = np.loadtxt("qnet_outputs/qnet_breakout_nature/test_action_preds_breakout_nature.txt")
-    aprobs = np.loadtxt("qnet_outputs/qnet_spaceinv_nature/test_action_preds_spaceinv_nature.txt")
+    number = 5024
+    #number = 13248
+    path = "final_data/breakout/"
+    #path = "final_data/space_invaders/"
+    aprobs = np.loadtxt("qnet_outputs/qnet_breakout_nature/test_action_preds_breakout_nature.txt")
+    #aprobs = np.loadtxt("qnet_outputs/qnet_spaceinv_nature/test_action_preds_spaceinv_nature.txt")
     X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
-    X_test = X_test[:13248]  # 5024 for Breakout
-    y_test = y_test[:13248]  # 5024 for Breakout
+    X_test = X_test[:number]
+    y_test = y_test[:number]
     print("Loaded data. X_test.shape = {}\ny_test.shape = {}\naprobs.shape = {}.".format(
         X_test.shape, y_test.shape, aprobs.shape))
     print("First few y_tests:\n{}".format(y_test[:20]))
     print("First few aprobs:\n{}".format(aprobs[:20]))
-    np.savetxt("test_action_targets.txt", y_test.reshape((13248,1)), fmt='%d') # do this once
+    # do this once
+    # np.savetxt("test_action_targets.txt", y_test.reshape((number,1)), fmt='%d') 
 
     # This will save the phi-s that I want.
-    #save_phi(phi=X_test[i], game='breakout', index=i, padding=4)
-    save_phi(phi=X_test[i], game='space_invaders', index=i, padding=4)
+    save_phi(phi=X_test[i], game='breakout', index=i, padding=4)
+    #save_phi(phi=X_test[i], game='space_invaders', index=i, padding=4)
 
 
 def do_analysis_testing_v2():
@@ -518,6 +521,6 @@ if __name__ == "__main__":
     """
     #train()
     #sandbox_test()
-    do_analysis_testing_v1(i=9829)
+    do_analysis_testing_v1(i=97)
     #do_analysis_testing_v2()
     print("")
