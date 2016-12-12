@@ -381,24 +381,29 @@ def sandbox_test():
     November 26-th version, this should result in 86.41% accuracy on the full
     testing data.
     """
-    path = "final_data/breakout/"
-    model_file = "qnet_output/model_l1_0.0005_epochs_30_bsize_32.npz"
+
+    # Check ALL of these:
+    path = "final_data/space_invaders/"
+    #model_file = "qnet_outputs/qnet_breakout_nature/model_l2_0.01_epochs_30_bsize_32.npz"
+    model_file = "qnet_outputs/qnet_spaceinv_nature/model_l1_0.0005_epochs_30_bsize_32.npz"
     out = "tmp/"
     batch_size = 32
+    num_acts = 6 # breakout=3, SI=6
 
     X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
     utilities.make_path_check_exists(out)
 
     # Now try to replicate the training method in re-generating the network.
-    # This is obviously breakout-spefici and we're hard-coding many numbers.
+    # TODO may want to make this easier to duplicate from the train() method?
     input_var = T.tensor4('inputs')
     target_var = T.ivector('targets')
-    network = build_nips_network_dnn(input_var=input_var,
-                                     input_width=84, 
-                                     input_height=84, 
-                                     output_dim=3,
-                                     num_frames=4, 
-                                     batch_size=batch_size)
+    network = build_nature_network_dnn(input_width=84, 
+                                       input_height=84,
+                                       output_dim=num_acts,
+                                       num_frames=4,
+                                       batch_size=batch_size,
+                                       human_net=True, 
+                                       input_var=input_var)
     print("Finished builing the network.")
     with np.load(model_file) as f:
         param_values = [f['arr_%d' % i] for i in range(len(f.files))]
@@ -413,7 +418,7 @@ def sandbox_test():
 
     test_acc = 0
     test_batches = 0
-    all_a_probs = np.zeros((X_test.shape[0]-(X_test.shape[0]%batch_size),3))
+    all_a_probs = np.zeros((X_test.shape[0]-(X_test.shape[0]%batch_size), num_acts))
     print("Now testing (and saving probabilities in all_a_probs, "+
           "shape={}".format(all_a_probs.shape))
 
@@ -426,7 +431,7 @@ def sandbox_test():
     test_acc = test_acc/test_batches * 100
     print("Final results:")
     print("  test accuracy:\t\t{:.2f} %".format(test_acc))
-    np.savetxt("qnet_output/test_action_preds.txt", all_a_probs, fmt='%1.5f')
+    np.savetxt("test_action_preds.txt", all_a_probs, fmt='%1.5f')
 
 
 def save_phi(phi, game, index, padding):
@@ -450,57 +455,58 @@ def do_analysis_testing_v1(i=0):
     Don't forget, vim numbers lines starting from 1, but it's 0-indexed!! This
     method lets me visually inspect an index and save its image via save_phi.
     """
-    path = "final_data/breakout/"
-    aprobs = np.loadtxt("qnet_output/test_action_preds.txt")
+    #path = "final_data/breakout/"
+    path = "final_data/space_invaders/"
+    #aprobs = np.loadtxt("qnet_outputs/qnet_breakout_nature/test_action_preds_breakout_nature.txt")
+    aprobs = np.loadtxt("qnet_outputs/qnet_spaceinv_nature/test_action_preds_spaceinv_nature.txt")
     X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
-    X_test = X_test[:5024] 
-    y_test = y_test[:5024] 
+    X_test = X_test[:13248]  # 5024 for Breakout
+    y_test = y_test[:13248]  # 5024 for Breakout
     print("Loaded data. X_test.shape = {}\ny_test.shape = {}\naprobs.shape = {}.".format(
         X_test.shape, y_test.shape, aprobs.shape))
     print("First few y_tests:\n{}".format(y_test[:20]))
     print("First few aprobs:\n{}".format(aprobs[:20]))
-    #max_noop = np.sort(aprobs[:,0])
-    #np.savetxt("test_action_targets", y_test.reshape((5024,1)), fmt='%d') # do this once
+    np.savetxt("test_action_targets.txt", y_test.reshape((13248,1)), fmt='%d') # do this once
 
     # This will save the phi-s that I want.
-    save_phi(phi=X_test[i], game='breakout', index=i, padding=4)
+    #save_phi(phi=X_test[i], game='breakout', index=i, padding=4)
 
 
 def do_analysis_testing_v2():
     """ 
     This will use the qnet_output/test_action_pairs.txt file to do more rigorous
     analysis, e.g. which classes did it mess up on, worst case scenarios, etc.
+    Note the 'pairs' file have the true label, i.e. I have to do that by
+    explicitly going into vim, etc., and it starts by calling from the previous
+    analysis testing v1 method.
     """
-    path = "final_data/breakout/"
-    aprob_pairs = np.loadtxt("qnet_output/test_action_pairs.txt")
+    #num_acts = 3
+    num_acts = 6
+    #path = "final_data/breakout/"
+    path = "final_data/space_invaders/"
+    #aprob_pairs = np.loadtxt("qnet_outputs/qnet_breakout_nature/test_action_pairs_breakout_nature.txt")
+    aprob_pairs = np.loadtxt("qnet_outputs/qnet_spaceinv_nature/test_action_pairs_spaceinv_nature.txt")
+
     print("aprob_pairs.shape={}".format(aprob_pairs.shape))
     print("\nFirst few action probabilities, followed by arg-max for them.")
-    print((aprob_pairs[:,:3])[:20])
-    print((np.argmax(aprob_pairs[:,:3], axis=1))[:20])
+    print((aprob_pairs[:,:num_acts])[:20])
+    print((np.argmax(aprob_pairs[:,:num_acts], axis=1))[:20])
 
     # Separate data into indices for correct (and incorrect) predictions.
-    inds_correct = np.where(np.argmax(aprob_pairs[:,:3], axis=1) == aprob_pairs[:,3])[0]
-    inds_wrong = np.where(np.argmax(aprob_pairs[:,:3], axis=1) != aprob_pairs[:,3])[0]
-    pairs_correct = aprob_pairs[inds_correct]
-    pairs_wrong = aprob_pairs[inds_wrong]
+    inds_correct = np.where(np.argmax(aprob_pairs[:,:num_acts], axis=1) == aprob_pairs[:,num_acts])[0]
+    inds_wrong = np.where(np.argmax(aprob_pairs[:,:num_acts], axis=1) != aprob_pairs[:,num_acts])[0]
 
-    # Do some analysis. Actually, it's easiest w/full data...
-    #worst_prob = 1.0
-    #worst_index = -1
-    correct = np.array([0, 0, 0])
-    total = np.array([0, 0, 0])
-
+    # Get per-class accuracy
+    correct = np.zeros(num_acts)
+    total = np.zeros(num_acts)
     for (index,row) in enumerate(aprob_pairs):
-        target = int(row[3])
-        if np.argmax(row[:3]) == target:
+        target = int(row[num_acts])
+        if np.argmax(row[:num_acts]) == target:
             correct[target] += 1
         total[target] += 1
     print(correct)
     print(total)
     print(correct.astype('float')/total)
-
-    #print("\nWorst **index** (starting from 0) in full data: {}".format(worst_index))
-    #print("Worst probability: {}".format(worst_prob))
 
 
 if __name__ == "__main__":
@@ -509,7 +515,8 @@ if __name__ == "__main__":
     of these at once. Apologies, there's a LOT of assumptions here. The code
     isn't quite general enough yet. =(
     """
-    train()
+    #train()
     #sandbox_test()
     #do_analysis_testing_v1(i=653)
     #do_analysis_testing_v2()
+    print("")
