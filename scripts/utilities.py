@@ -25,13 +25,15 @@ def rgb2gray(rgb):
 def analyze_model_files(model_file_path):
     """ Analyze model files. I'll put this here for now. """
     directories = [x for x in os.listdir(model_file_path) if x[:5]=='stats']
-    test_loss_accs = []
+    train_loss_accs = []
     valid_loss_accs = []
+    test_loss_accs = []
 
     for d in directories:
         array = np.load(model_file_path + d)
-        test_loss_accs.append((d, array['test_loss_acc'][0], array['test_loss_acc'][1]))
+        train_loss_accs.append((d, array['train_losses'][-1], array['train_accs'][-1]))
         valid_loss_accs.append((d, array['valid_losses'][-1], array['valid_accs'][-1]))
+        test_loss_accs.append((d, array['test_loss_acc'][0], array['test_loss_acc'][1]))
 
     sorted_scores = sorted(test_loss_accs, key=lambda x:x[2])
     print("Sorted by test scores:")
@@ -41,6 +43,11 @@ def analyze_model_files(model_file_path):
     print("Sorted by valid scores:")
     for item in sorted_valids:
         print(item)
+    sorted_trains = sorted(train_loss_accs, key=lambda x:x[2])
+    print("Sorted by train scores:")
+    for item in sorted_trains:
+        print(item)
+
 
 if __name__ == "__main__":
     #analyze_model_files('qnet_out_breakout_nature/')
