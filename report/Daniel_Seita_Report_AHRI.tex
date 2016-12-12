@@ -3,8 +3,8 @@
 \usepackage{amsmath,balance,multicol,url}
 \input{includes/preamble.tex}
 
-\title{\LARGE \bf Using Expert Human Gameplay Data on Atari 2600 Games for Deep
-Reinforcement Learning}
+\title{\LARGE \bf Human-Guided DQN: Using Expert Human Gameplay Data on Atari
+2600 Games for Deep Reinforcement Learning}
 \author{Daniel Seita \\
 Computer Science Division\\
 University of California, Berkeley\\
@@ -63,8 +63,8 @@ correspond to \emph{random} actions, the AI agent can use those cases to follow
 the \emph{human action}.
 
 We report on the results of our classifier and the AI agents. We show that
-standard convolutional neural networks can often identify the correct actions
-for humans to take, but that combining this inside a DQN agent does not
+standard convolutional neural networks (CNNs) can often identify the correct
+actions for humans to take, but that combining this inside a DQN agent does not
 generally improve performance that much, though there are several obvious
 steps to take for future work. Ultimately, we hope to better understand the
 human learning and deep learning processes that enable the corresponding
@@ -159,7 +159,11 @@ connection between human learning versus deep learning.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Problem Statement and Idea}\label{sec:idea}
 
-IN PROGRESS (just state the objective right here)
+The chief goal of this project is to improve the performance of DQN by inserting
+a classifier trained on human actions as part of the $\epsilon$-greedy policy
+practiced as a result of Q-Learning. Along the way, we present auxiliary results
+regarding the potential for training a classifier directly on human gameplay
+data.
 
 \subsection{Algorithm Details}\label{ssec:algorithm}
 
@@ -167,32 +171,81 @@ IN PROGRESS (just state the objective right here)
 \centering
 \includegraphics[width=0.45\textwidth]{figures/dqn_with_human_data_graph.png}
 \caption{\footnotesize
-TODO
+The overall picture for our Human-Guided DQN algorithm with regards to
+$\epsilon$ decay during Q-Learning. During the exploration stage, instead of
+playing random actions with probability $\epsilon$, we perform the action chosen
+from our trained classifier with probability $\epsilon-0.1$, up until 1 million
+steps, upon which time our classifier is ignored. Note that, as described in
+\textbf{TODO TODO}, we adjust the number of steps taken to investigate the
+impact of a longer exploration period.
 }
 \label{fig:human-guided-dqn}
 \end{figure}
 
-Fig.~\ref{fig:human-guided-dqn} presents a picture of the overall pipeline.
+To ensure sufficient exploration of the state space, both standard Q-Learning
+and standard DQN follow $\epsilon$-greedy policies, where the action to take at
+state $s$ is selected to be $a = \argmax_a Q(s,a)$ with probability $1-\epsilon$
+and randomly selected otherwise. The code from~\cite{mnih-dqn-2015} initializes
+at $\epsilon=1.0$ and linearly anneals it down to 0.1 after the first one
+million steps, and then fixes it thereafter.
 
-Due to the time-consuming aspects of this, we only perform with two games:
-Breakout and Space Invaders, and leave other games to future work.
+Our objective is to provide potentially better state exploration by utilizing
+human data. Rather than choose an action with probability $\epsilon$, which will
+be very high in the beginning, why not choose the action that a human would take
+in this situation? One hopeful outcome is that this will ``bias'' the state
+exploration space towards ``better'' areas, and then standard DQN would continue
+to build upon that positive exploration to obtain higher-quality rewards. In
+particular, we hope to see that this method provides a faster improvement in the
+beginning of the exploration stage relative to standard DQN.
 
-\subsection{Implementation Details}\label{ssec:implementation}
+Figure~\ref{fig:human-guided-dqn} presents a picture of the overall pipeline.
+During the first million training steps where $\epsilon$ is linearly annealed,
+when the agent selects a random action, we usually (but not always) choose
+instead the action chosen by the classifier trained on human data. We leave a
+fixed probability of $\epsilon=0.1$ to choose random actions, in part because
+certain games have actions which appear extremely infrequently (e.g., FIRE in
+Breakout during human gameplay occurs around five times per game) but will be
+executed via these random actions. We call our method \emph{Human-Guided DQN}.
 
-For coding purposes, we use a modified version of the
-ALE~\cite{bellemare13arcade} which allows the human player to collect data. 
+\subsection{Methodology and Implementation}\label{ssec:implementation}
 
-Describe preprocessing steps, etc.
+There are three major steps for the experiments: human gameplay, developing a
+classifier to map from game frames to actions, and then plugging it into DQN. 
 
-Our classifier's code and supporting documents are
+\subsubsection{Human Gameplay} To enable human gameplay, we modify the Arcade
+Learning Environment (ALE)~\cite{bellemare13arcade} to enable a human to play.
+Each time step, we save the RGB game screen, the action taken, and the reward
+received. The human player is the author of this paper, who is an expert in
+Breakout and Space Invaders with roughly twenty hours and eight hours of prior
+gampeplay experience for these respective games.\footnote{This is in contrast to
+the methodology from~\cite{mnih-dqn-2015}, where human experts had only two
+hours of training.} We ultimately collected human gameplay data based on six
+hours of Breakout and five hours of Space Invaders. Due to the time-consuming
+nature of this work, we leave analysis on other Atari games to future work.
+
+\subsubsection{Developing a Classifier} With the data from the human gameplay,
+we apply the standard preprocessing steps performed in~\cite{mnih-dqn-2015},
+such as frame skipping and taking four consecutive (but non-skipped) frames to
+form a state. (For additional details, see
+Appendix~\ref{app:preprocessing_details}.) We then build a CNN
+using the same architecture as the Q-Network from~\cite{mnih-dqn-2015},
+which uses three convolutional layers followed by two fully connected layers,
+and has the number of outputs equal to the number of actions chosen. As
+mentioned in Section~\ref{ssec:algorithm}, however, we filter the actions so
+that those which happen infrequently or a fixed amount of times per game are not
+considered (instead, they are played via the random actions or the standard
+Q-Network in DQN). For Deep Learning code, we use the Theano
+library~\cite{2016arXiv160502688short}.  Our classifier's code and supporting
+documents are
 open-source.\footnote{\url{https://github.com/DanielTakeshi/Algorithmic-HRI}}
 
-Our code is open-source and visible on
+\subsubsection{The DQN Algorithm} Upon developing a classifier, we rigorously
+tuned it (see Section~\ref{ssec:results_classifier}) to identify the strongest
+hyperparameters. We then modified a popular open-source implementation of DQN to
+load in the model weights into a new network (but with the same architecture)
+and to enable it to use the classifier during the training process. Again, our
+code is open-source on
 GitHub.\footnote{\url{https://github.com/DanielTakeshi/deep_q_rl}}
-
-We use Theano~\cite{2016arXiv160502688short}.
-
-For additional details, see Appendix~\ref{app:preprocessing_details}.
 
 
 
@@ -203,7 +256,7 @@ For additional details, see Appendix~\ref{app:experiment_details_human}.
 
 IN PROGRESS
 
-\subsection{Classifier Performance}
+\subsection{Classifier Performance}\label{ssec:results_classifier}
 
 Discuss Breakout, Space Invaders results here, put a table here with the tuned
 parameters?.
@@ -251,9 +304,26 @@ $L_1$ & 0.01      & 28.5  & 29.0  & $L_2$ & 0.01      & 75.9  & \textbf{72.7} \\
 \end{tabular}
 \end{table}
 
-\subsection{Classifier Investigation}
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.30\textwidth]{figures/empty.png}
+\caption{\footnotesize
+TODO how about this, we try and plot the distribution of actions for the
+classifiers on the two games? Just have this be a very small figure but side by
+side ... so it still only takes up half a column.
+}
+\label{fig:action_distribution}
+\end{figure}
 
-Now provide example images?
+The results are shown in Table~\ref{tab:breakout}.
+
+The results are shown in Table~\ref{tab:space_invaders}.
+
+The distribution of actions is displayed in Figure~\ref{fig:action_distribution}.
+
+
+
+\subsection{Classifier Investigation}
 
 \begin{figure*}[t]
 \centering
@@ -264,17 +334,17 @@ classifier, just like I did in the presentation. I'll want the full width (i.e.
 two columns) for this, with good and bad examples from each game. More details
 should be provided in a table with tuned values.
 }
-\label{fig:empty1}
+\label{fig:example_game_frames}
 \end{figure*}
+
+Now provide example images? Results are shown in
+Figure~\ref{fig:example_game_frames}.
+
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results: Modified DQN}\label{sec:results_p2}
-
-For additional details, see Appendix~\ref{app:experiment_details_dqn}.
-
-IN PROGRESS
 
 \begin{figure*}[t]
 \centering
@@ -284,9 +354,8 @@ This will be another full-page figure. Here I'll hope to have the plots
 comparing my results with DQN results, with both action-value and rewards. Use
 moving averages. I may need a second one of these.
 }
-\label{fig:empty2}
+\label{fig:human_dqn_performance}
 \end{figure*}
-
 
 \begin{figure}[t]
 \centering
@@ -295,8 +364,15 @@ moving averages. I may need a second one of these.
 TODO hopefully this will be the SI with human but with longer exploration
 periods.
 }
-\label{fig:...}
+\label{fig:sp_inv_longer_exploration}
 \end{figure}
+
+Figure~\ref{fig:human_dqn_performance}
+
+Figure~\ref{fig:sp_inv_longer_exploration}.
+
+For additional details, see Appendix~\ref{app:experiment_details_dqn}.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}\label{sec:conclusions}
@@ -310,7 +386,7 @@ given a sequence of game frames. A DQN agent then used this classifier as part
 of our human-guided DQN algorithm. While the DQN results do not improve using
 our algorithm, we believe there is still potential for algorithmic improvements
 in this work. In future work, we will first run the algorithm with a larger
-number of exploration steps to better see the effects of the DQN agent. Second,
+number of exploration steps to better see the effects of the DQN agent.  Second,
 we will try the concept of \emph{human experience replay} and combine experience
 replay from the agent's exploration with that of a human. Third, our more
 elaborate goal is to shift gears and work on training attention
