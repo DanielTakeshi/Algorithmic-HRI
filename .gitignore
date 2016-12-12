@@ -8,3 +8,5 @@ tmp/*
 *.npz
 *.aux
 *.log
+*.bbl
+*.blg
