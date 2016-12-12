@@ -288,7 +288,7 @@ $L_1$ & 0.01      & 28.5  & 29.0  & $L_2$ & 0.01      & 75.9  & \textbf{72.7} \\
 \includegraphics[width=0.48\textwidth]{figures/bar_charts_actions.png}
 \caption{\footnotesize
 The distribution of actions for Breakout (left) and Space Invaders (right)
-within our training data for classification. This is the distribution obtained
+within all our data used for classification. This is the distribution obtained
 \emph{after} pre-processing steps to eliminate most NOOP actions. For Breakout,
 we randomly select $x$ NOOP actions out of the full set, where $x$ is the
 average of the LEFT and RIGHT action counts. For Space Invaders, we kept one
@@ -332,6 +332,8 @@ and~\ref{tab:space_invaders}, with bold indicating the best settings. With low
 $\lambda$, the net gets arbitrarily high performance on the training data, but
 performs poorly otherwise. For both games, we keep only the best-performing net
 on the validation set.
+The distribution of accuracy results [...] (this is where I say
+the per-class results).
 
 \subsection{Classifier Investigation}
 
@@ -348,9 +350,6 @@ XXX is correctly predicted (XXX confidence).
 }
 \label{fig:example_game_frames}
 \end{figure*}
-
-The distribution of accuracy results [...] (this is where I say
-the per-class results).
 
 We further investigate the top-performing Breakout and Space Invaders classifier
 by visually inspecting example outputs. Figure~\ref{fig:example_game_frames}
