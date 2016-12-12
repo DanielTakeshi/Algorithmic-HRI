@@ -29,41 +29,36 @@ Atari games (Breakout and Space Invaders).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}\label{sec:introduction}
 
-Deep learning can be used for challenging tasks in reinforcement learning, where
+Deep Learning can be used for challenging tasks in reinforcement learning, where
 the job of AI is not to perform ``simple'' classification as
 in~\cite{AlexNet2012}, but to learn from high-dimensional, correlated data with
 a scalar reward signal that is noisy and exhibits complicated, long-term
 rewards. Most famously,~\cite{mnih-dqn-2015} combined model-free reinforcement
-learning with deep learning techniques to develop an AI agent capable of
+learning with Deep Learning techniques to develop an AI agent capable of
 learning how to play Atari 2600 games at a level matching or exceeding human
 performance. The AI only learned from the game frames and the score, just like
 how a human would learn. Similar techniques combine deep learning with Monte
 Carlo Tree Search~\cite{nips-atari-2014,silver-alphago-2016}.
 
-Nonetheless, despite the progress advanced by neural networks, many questions
-still remain about how exactly neural networks learn, and it is still unclear if
-this underlying ``process'' is at all similar to the way that humans would
-learn. One way to explore this question would be to try and directly incorporate
-learning from demonstrations to boosting the performance of agents.
-
-In this report, a human expert plays games, Breakout and Space Invaders, and we
-augment the learning process of neural network agents with human data to
-accelerate training to get fast, high-quality policies. This step involves two
-main steps. The first is to train a classifier to map from game frames to
-actions based on human data. The second step is to incorporate the classifier
+In this work, we combine Deep Reinforcement Learning and Learning from
+Demonstrations. In our setting, a human expert plays Atari games (Breakout and
+Space Invaders) and records the game frames and actions.  Then, we experiment
+with an augmented version of DQN which utilizes the human gameplay data. This
+involves two main steps. The first is to train a classifier on the human data to
+map from game frames to actions. The second is to incorporate that classifier
 during the exploration phase of the DQN agent, when it is following an
 $\epsilon$-greedy policy. Rather than have the ``$\epsilon$ cases'' correspond
-to \emph{random} actions, the AI can use those cases to follow the \emph{human
-action}.
+to \emph{random} actions, the AI can use those cases to follow the predicted
+\emph{human action}.
 
-We report on the results of our classifier and the AI agents. We show that
-standard convolutional neural networks (CNNs) can often identify the correct
-actions for humans to take, but that combining this inside a DQN agent does not
-generally improve performance that much, though there are several obvious
-steps to take for future work. Ultimately, we hope to better understand the
-human learning and deep learning processes that enable the corresponding
-agents to successfully play Atari games and hope to eventually boost the DQN
-process with human data.
+We report on the results of our classifier and the revised AI agents. We show
+that standard convolutional neural networks (CNNs) can often identify the
+correct actions that the human expert took, but that combining this with a DQN
+agent does not generally improve performance. There are, however, several clear
+steps to engage for future work, and we hope to eventually be able to
+significantly boost the DQN algorithm by utilizing human gameplay data.
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -79,12 +74,8 @@ $a$. This is the expected sum of discounted rewards for the agent starting at
 state $s$, taking action $a$, and from then on, playing optimally according to
 the action determined by the policy.  With Atari games, the states are
 \emph{sequences} of game frames $x_1,x_2,\ldots,x_t$ encountered during game
-play\footnote{Technically,~\cite{mnih-dqn-2015} reports that states are
-sequences of game frames \emph{and} actions: $x_1,a_1,x_2,\ldots,a_t$. When
-doing Q-Learning, however, their code only considers four consecutive frames and
-does not take into account actions other than the current one under
-consideration.}. The optimal action-value function $Q$ obeys the \emph{Bellman
-equation} identity: 
+play. The optimal action-value function $Q$ obeys the \emph{Bellman equation}
+identity: 
 \begin{equation}\label{eq:bellman}
 Q(s,a) = \mathbb{E}_{s'}\left[r + \gamma \cdot \max_{a'} Q(s',a') \mid s,a \right].
 \end{equation}
@@ -332,11 +323,50 @@ Tuning results are shown in Tables~\ref{tab:breakout}
 and~\ref{tab:space_invaders}, with bold indicating the best settings. With low
 $\lambda$, the net gets arbitrarily high performance on the training data, but
 performs poorly otherwise. For both games, we keep only the best-performing net
-on the validation set.
-The distribution of accuracy results [...] (this is where I say
-the per-class results).
+on the validation set. In Breakout, the best net achieves 86.3\% accuracy on the
+validation set, and for Space Invaders, that figure is 74.5\%, which is lower
+due to the more challenging classification task. The per-class results on the
+\emph{test} set are shown in Tables~\ref{tab:breakout_perclass}
+and~\ref{tab:spaceinv_perclass}, respectively. The results indicate that all
+three actions are fairly easy to detect for Breakout, but for Space Invaders,
+our classifiers are better at detecting LEFT and RIGHT actions.
 
 \subsection{Classifier Investigation}
+
+% More tables, this time for the action distribution!
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.3}
+\caption{Per-Class Performance on Breakout}
+\label{tab:breakout_perclass}
+\centering
+\begin{tabular}{c c c c}
+\hline
+        & NOOP  & LEFT & RIGHT \\
+\hline
+Correct & 1463 & 1492 & 1390 \\
+Total   & 1635 & 1784 & 1605 \\
+Percent & 89.4 & 83.6 & 86.6 \\
+\hline
+\end{tabular}
+\end{table}
+
+% Same thing this time for SI
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.3}
+\caption{Per-Class Performance on Space Invaders}
+\label{tab:spaceinv_perclass}
+\centering
+\begin{tabular}{c c c c c c c}
+\hline
+        & NOOP & FIRE & LEFT & RIGHT & F-L  & F-R  \\
+\hline
+Correct & 2255 & 1660 & 2462 & 3378  &  34  &   83 \\
+Total   & 3310 & 2699 & 2817 & 3870  &  246 &  306 \\
+Percent & 68.1 & 61.5 & 87.3 & 87.2  & 13.8 & 27.1 \\
+\hline
+\end{tabular}
+\end{table}
+
 
 \begin{figure*}[t]
 \centering
