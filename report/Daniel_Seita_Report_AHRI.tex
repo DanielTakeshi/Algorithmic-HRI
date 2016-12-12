@@ -106,7 +106,7 @@ and it is $\theta$ that the Q-Learning algorithm must learn.
 
 In practice,~\cite{mnih-dqn-2015} uses a variant of online Q-Learning (with an
 $\epsilon$-greedy policy for exploration) with two key ideas: experience replay
-for breaking the correlation among datat points and a separate target network
+for breaking the correlation among data points and a separate target network
 for generating the target terms in Equation~\ref{eq:bellman} to increase the
 algorithm's stability. The DQN trained with this variant of Q-Learning was able
 to excel at many Atari games, especially fast-paced games with simple rules such
@@ -119,23 +119,24 @@ games.  In~\cite{nips-atari-2014}, they augment training using data collected
 ``offline player,'' while substantially better than DQN, cannot play in real
 time, but can be used to improve DQN's performance. The work
 of~\cite{Schaul2016} introduces prioritized experience replay to
-train DQN agents faster since the most important transitions would be considered
-more frequently. 
+train DQN agents faster since the most important transitions (with respect to
+temporal difference error) would be considered more frequently. It is also
+possible to boostrap DQN~\cite{NIPS2016_6501} by borrowing techniques from
+the statistical method of boostrapping.
 
-In~\cite{DBLP:conf/icml/WangSHHLF16}, they present a different neural network
+Th work of~\cite{DBLP:conf/icml/WangSHHLF16} presents a different neural network
 architecture specialized for reinforcement learning,
-and~\cite{DBLP:conf/aaai/HasseltGS16} proposes the Double DQN, which mitigates
+and~\cite{DBLP:conf/aaai/HasseltGS16} proposes Double-DQN, which mitigates
 the problem of the ``max'' operator using the same values to both select and
 evaluate an action (thus leading to overoptimistic value estimates). At the time
-of publication, it was the highest-quality DQN available [EDIT NOT ANYMORE!!].
-It is also possible to boostrap DQN~\cite{NIPS2016_6501} by using the boostrap
-sampling technique.
+of publication, it was the highest-quality DQN available, though it has since
+been surpassed by~\cite{DBLP:conf/icml/MnihBMGLHSK16}, which proposes
+asynchronous variants of DQN algorithms and uses an asynchronous actor-critic
+model to achieve the state of the art Atari results. These results were finally
+surpassed by the current state of the art
+in~\cite{DBLP:journals/corr/JaderbergMCSLSK16}.
 
-In~\cite{DBLP:conf/icml/MnihBMGLHSK16}, they propose asynchronous variants. At
-the time of publication, it was the highest quality DQN version yet, but has
-since been surpassed by the work of~\cite{DBLP:journals/corr/JaderbergMCSLSK16}
-which proposes the UNREAL agent with the current state of the art.
-
+% Daniel: I better double check of all of these.
 While there has been much work concerning the technical aspects of DQN and its
 variants, there has been very little work on incorporating human aspects
 specifically to Atari games, the only major work of which is
@@ -148,7 +149,9 @@ function~\cite{conf/nips/KimFPP13}, human supervision of robotic
 grasping~\cite{DBLP:journals/corr/LaskeyCLMKJDG16,DBLP:dblp_conf/icra/LaskeySHMPDG16}
 along with that of cooperation with humans~\cite{NIPS2016_6420}.
 
-The aim of this work is to resolve that gap [...] and to better understand the
+The aim of this work is to resolve the gap between DQN (and more generally, Deep
+Reinforcement Learning) and Learning from Demonstrations by augmenting the DQN
+algorithm with data on human gameplay. We also hope to better understand the
 connection between human learning versus deep learning.
 
 
@@ -203,38 +206,45 @@ IN PROGRESS
 Discuss Breakout, Space Invaders results here, put a table here with the tuned
 parameters?.
 
+% Daniel: I think I want to hold off on this until I regenerate the Breakout
+% data using the correct cropping method.
 \begin{table}[!t]
 \renewcommand{\arraystretch}{1.3}
-\caption{Classifier Performance: Breakout}
+\caption{Classifier Performance on Breakout}
 \label{tab:breakout}
 \centering
 \begin{tabular}{c c c c | c c c c}
 \hline
-Reg. & $\lambda$ & Train & Valid & Reg. & $\lambda$ & Train & Valid \\
+Reg.  & $\lambda$ & Train & Valid & Reg.  & $\lambda$ & Train & Valid \\
 \hline
-$L_1$ & 0.005 & 86.5 & 86.5 & $L_2$ & 0.005 & 86.5 & 86.5 \\
-$L_1$ & 0.005 & 86.5 & 86.5 & $L_2$ & 0.005 & 86.5 & 86.5 \\
-$L_1$ & 0.005 & 86.5 & 86.5 & $L_2$ & 0.005 & 86.5 & 86.5 \\
-$L_1$ & 0.005 & 86.5 & 86.5 & $L_2$ & 0.005 & 86.5 & 86.5 \\
-$L_1$ & 0.005 & 86.5 & 86.5 & $L_2$ & 0.005 & 86.5 & 86.5 \\
+$L_1$ & 0.00005   &   &   & $L_2$ & 0.00005   &   &  \\
+$L_1$ & 0.0001    &   &   & $L_2$ & 0.0001    &   &  \\
+$L_1$ & 0.0005    &   &   & $L_2$ & 0.0005    &   &  \\
+$L_1$ & 0.005     &   &   & $L_2$ & 0.001     &   &  \\
+$L_1$ & 0.001     &   &   & $L_2$ & 0.005     &   &  \\
+$L_1$ & 0.05      &   &   & $L_2$ & 0.05      &   &  \\
+$L_1$ & 0.01      &   &   & $L_2$ & 0.01      &   &  \\
 \hline
 \end{tabular}
 \end{table}
 
+% Whew ... I think these numbers should be all correct.
 \begin{table}[!t]
 \renewcommand{\arraystretch}{1.3}
-\caption{Classifier Performance: Space Invaders}
+\caption{Classifier Performance on Space Invaders}
 \label{tab:space_invaders}
 \centering
 \begin{tabular}{c c c c | c c c c}
 \hline
-Reg. & $\lambda$ & Train & Valid & Reg. & $\lambda$ & Train & Valid \\
+Reg.  & $\lambda$ & Train & Valid & Reg.  & $\lambda$ & Train & Valid \\
 \hline
-$L_1$ & 0.005 & 86.5 & 86.5 & $L_2$ & 0.005 & 86.5 & 86.5 \\
-$L_1$ & 0.005 & 86.5 & 86.5 & $L_2$ & 0.005 & 86.5 & 86.5 \\
-$L_1$ & 0.005 & 86.5 & 86.5 & $L_2$ & 0.005 & 86.5 & 86.5 \\
-$L_1$ & 0.005 & 86.5 & 86.5 & $L_2$ & 0.005 & 86.5 & 86.5 \\
-$L_1$ & 0.005 & 86.5 & 86.5 & $L_2$ & 0.005 & 86.5 & 86.5 \\
+$L_1$ & 0.00005   & \textbf{96.3}  & 67.5  & $L_2$ & 0.00005   & \textbf{97.8}  & 66.0 \\
+$L_1$ & 0.0001    & 94.7  & 68.2  & $L_2$ & 0.0001    & \textbf{97.8}  & 66.9 \\
+$L_1$ & 0.0005    & 76.5  & \textbf{74.5}  & $L_2$ & 0.0005    & 96.5  & 68.4 \\
+$L_1$ & 0.005     & 65.9  & 65.8  & $L_2$ & 0.005     & 81.0  & \textbf{72.7} \\
+$L_1$ & 0.001     & 74.4  & 73.4  & $L_2$ & 0.001     & 95.1  & 68.2 \\
+$L_1$ & 0.05      & 28.5  & 29.0  & $L_2$ & 0.05      & 64.7  & 64.0 \\
+$L_1$ & 0.01      & 28.5  & 29.0  & $L_2$ & 0.01      & 75.9  & \textbf{72.7} \\
 \hline
 \end{tabular}
 \end{table}
@@ -276,7 +286,15 @@ moving averages. I may need a second one of these.
 \end{figure*}
 
 
-
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.30\textwidth]{figures/empty.png}
+\caption{\footnotesize
+TODO hopefully this will be the SI with human but with longer exploration
+periods.
+}
+\label{fig:...}
+\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}\label{sec:conclusions}

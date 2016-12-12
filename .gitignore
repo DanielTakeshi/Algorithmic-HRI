@@ -6,3 +6,5 @@ output
 data_raw
 tmp/*
 *.npz
+*.aux
+*.log
