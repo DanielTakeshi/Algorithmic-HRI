@@ -445,7 +445,7 @@ def save_phi(phi, game, index, padding):
         f = Image.fromarray(phi[i])
         blank_image.paste(f, coords[i])
     name = str(index).zfill(padding)
-    blank_image.save("qnet_output/" +game+ "_phi_" +name+ ".png")
+    blank_image.save("qnet_outputs/" +game+ "_phi_" +name+ ".png")
 
 
 def do_analysis_testing_v1(i=0):
@@ -470,6 +470,7 @@ def do_analysis_testing_v1(i=0):
 
     # This will save the phi-s that I want.
     #save_phi(phi=X_test[i], game='breakout', index=i, padding=4)
+    save_phi(phi=X_test[i], game='space_invaders', index=i, padding=4)
 
 
 def do_analysis_testing_v2():
@@ -517,6 +518,6 @@ if __name__ == "__main__":
     """
     #train()
     #sandbox_test()
-    #do_analysis_testing_v1(i=653)
+    do_analysis_testing_v1(i=9829)
     #do_analysis_testing_v2()
     print("")
