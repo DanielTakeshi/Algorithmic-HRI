@@ -11,10 +11,13 @@ Breakout NIPS:
 
 Breakout Nature:
 
-(The best performing model file wasn't trained on Nature-cropped data, but NIPS
-...)
+OK this one works now. Best is 0.01 L2.
 
 Space Invaders Nature:
 
 The best performing file is model_l1_0.0005_epochs_30_bsize_32.npz which I
 subsequently copied over to the deep_q_rl directory.
+
+EDIT: Argh, i may have to re-run SI since I overwrite some of it with Breakout
+data. But the best performing model file should still be OK and that's all that
+matters.

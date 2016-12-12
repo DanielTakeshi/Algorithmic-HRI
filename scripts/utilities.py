@@ -50,5 +50,4 @@ def analyze_model_files(model_file_path):
 
 
 if __name__ == "__main__":
-    #analyze_model_files('qnet_out_breakout_nature/')
-    analyze_model_files('qnet_outputs/qnet_spaceinv_nature/')
+    analyze_model_files('qnet_outputs/qnet_breakout_nature/')

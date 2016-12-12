@@ -357,9 +357,9 @@ def do_training(X_train, y_train, X_val, y_val, X_test, y_test, reg_type='l1',
 
 
 def train():
-    path = "/home/daniel/Algorithmic-HRI/final_data/space_invaders/"
-    na = 6 # Change according to game!
-    out = 'qnet_spaceinv_nature/'
+    path = "/home/daniel/Algorithmic-HRI/final_data/breakout/"
+    na = 3 # Change according to game!
+    out = 'qnet_outputs/qnet_breakout_nature/' # change!
     utilities.make_path_check_exists(out)
     regs = [5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2]
     X_train, y_train, X_val, y_val, X_test, y_test = load_datasets(path=path)
