@@ -402,7 +402,7 @@ agent has already cleared a few aliens in a column but has not yet cleared it.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.30\textwidth]{figures/empty.png}
+\includegraphics[width=1.00\textwidth]{figures/fig_breakout_si_together.png}
 \caption{\footnotesize
 Plots which compare the performance of standard DQN (black) versus Human-Guided
 DQN (blue) on Breakout (first two subplots) and Space Invaders (last two
@@ -416,13 +416,14 @@ $avg = 0.7\cdot avg + 0.3\cdot newscores$.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.30\textwidth]{figures/empty.png}
+\includegraphics[width=0.48\textwidth]{figures/fig_space_invaders_longer_exploration.png}
 \caption{\footnotesize
-A comparison of the rewards obtained via standard DQN (black) versus
-Human-Guided DQN (blue) on Space Invaders. This is similar to the Space Invaders
-subplots of Figure~\ref{fig:human_dqn_performance}, except that the exploration
-period is 10x longer and the number of epochs has been reduced from 200 to 80.
-(The exploration phase ``ends'' after epoch 40, which is when $\epsilon=0.1$.)
+Comparing average score per episode for standard DQN (black) versus Human-Guided
+DQN (blue) on Space Invaders. This is similar to the Space Invaders subplots of
+Figure~\ref{fig:human_dqn_performance}, except that a moving average is not
+used, and that the exploration period is 10x longer and the number of epochs has
+been reduced from 200 to 80.  (The exploration phase ``ends'' after epoch 40,
+which is when $\epsilon=0.1$.)
 }
 \label{fig:sp_inv_longer_exploration}
 \end{figure}
