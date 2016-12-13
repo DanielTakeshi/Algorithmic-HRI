@@ -18,12 +18,12 @@ Deep Reinforcement Learning is arguably the hottest and most popular subfield of
 Artificial Intelligence. In large part, this was popularized due to the success
 of agents in learning how to play Atari games from scratch, given only the input
 screen pixels and the game reward as input.  While there has been substantial
-follow-up work on how to improve the Deep Q-Network (DQN) algorithm, there has
-not been much focus on how to utilize human guidance. In this paper, we report
-progress about an idea for using human expert gameplay on Atari games to boost
-DQN. During the exploration stage for Q-Learning, we substitute the random
-exploration with human actions. We investigate and discuss performance on two
-Atari games (Breakout and Space Invaders).
+follow-up work on how to improve the resulting Deep Q-Network (DQN) algorithm,
+there has not been much focus on how to utilize human guidance. In this paper,
+we report progress about an idea for using human expert gameplay on Atari games
+to boost DQN. During the exploration stage for Q-Learning, we substitute the
+random exploration with human actions. We investigate and discuss performance on
+two Atari games (Breakout and Space Invaders).
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -55,7 +55,7 @@ We report on the results of our classifier and the revised AI agents. We show
 that standard convolutional neural networks (CNNs) can often identify the
 correct actions that the human expert took, but that combining this with a DQN
 agent does not generally improve performance. There are, however, several clear
-steps to engage for future work, and we hope to eventually be able to
+steps to engage in for future work, and we hope to eventually be able to
 significantly boost the DQN algorithm by utilizing human gameplay data.
 
 
@@ -87,7 +87,7 @@ The states are extremely high dimensional; even with downsampling, one frame is
 an $(84\times 84)$-dimensional input, and storing all $Q(s,a)$ values explicitly
 in a table is impractical.  Therefore, the $Q(s,a)$ values are
 \emph{approximated} by a neural network parameterized by its weights $\theta$,
-and it is $\theta$ that the Q-Learning algorithm must learn.
+which the Q-Learning algorithm must learn.
 
 In practice,~\cite{mnih-dqn-2015} uses a variant of online Q-Learning with two
 key ideas: experience replay for breaking the correlation among data points and
@@ -117,19 +117,18 @@ model to achieve state of the art Atari results. These results were finally
 surpassed by the \emph{current} state of the art
 in~\cite{DBLP:journals/corr/JaderbergMCSLSK16}.
 
-% Daniel: I better double check of all of these.
 While there has been much work concerning the technical aspects of DQN and its
 variants, there has been very little work on incorporating human aspects
 specifically to Atari games, the only major work of which is
-from~\cite{DBLP:journals/corr/HosuR16}; we aim to rectify that with this
-research. Otherwise, this is a broader category of Learning from Demonstrations,
-a category which has been receiving more popularity including the seminal work
+from~\cite{DBLP:journals/corr/HosuR16}. We aim to rectify that with this
+research, which is part of the broader category of Learning from Demonstrations.
+This area has received enormous popularity recently, boosted by the seminal work
 of Maximum Entropy IRL~\cite{Ziebart_2008_6055} and
 DAGGER~\cite{DBLP:journals/jmlr/RossGB11}.  There has been more recent work
 about adjusting humans and the loss function~\cite{conf/nips/KimFPP13}, human
 supervision of robotic
 grasping~\cite{DBLP:journals/corr/LaskeyCLMKJDG16,DBLP:dblp_conf/icra/LaskeySHMPDG16}
-along with that of cooperation with humans~\cite{NIPS2016_6420}.
+along with that of cooperation~\cite{NIPS2016_6420}.
 
 
 
@@ -141,7 +140,7 @@ actions as part of the $\epsilon$-greedy policy practiced by Q-Learning. In
 addition, we also hope to show that classifiers can successfully predict human
 actions.
 
-\subsection{Algorithm Details}\label{ssec:algorithm}
+\subsection{Algorithm: Human-Guided DQN}\label{ssec:algorithm}
 
 \begin{figure}[t]
 \centering
@@ -158,12 +157,12 @@ investigate the impact of a longer exploration period.
 \label{fig:human-guided-dqn}
 \end{figure}
 
-To ensure sufficient exploration of the state space, both standard Q-Learning
-and standard DQN follow $\epsilon$-greedy policies, where the action to take at
-state $s$ is selected to be $a = \argmax_a Q(s,a)$ with probability $1-\epsilon$
-and randomly selected otherwise. The code from~\cite{mnih-dqn-2015} initializes
-at $\epsilon=1.0$ and linearly anneals it down to 0.1 after the first one
-million steps, and then fixes it thereafter.
+To ensure sufficient exploration of the state space, standard DQN follows
+$\epsilon$-greedy policies, where the action to take at state $s$ is selected to
+be $a = \argmax_a Q(s,a)$ with probability $1-\epsilon$ and randomly selected
+otherwise. The code from~\cite{mnih-dqn-2015} initializes at $\epsilon=1.0$ and
+linearly anneals it 0.1 during the first one million steps, and then fixes it
+thereafter.
 
 Our objective is to provide potentially better state exploration by utilizing
 human data. Rather than choose an action with probability $\epsilon$, which will
@@ -174,14 +173,14 @@ positive exploration to obtain higher-quality rewards. In particular, we hope to
 see that this method provides improvement in the beginning of the exploration
 stage relative to standard DQN.
 
-Figure~\ref{fig:human-guided-dqn} presents a picture of the overall pipeline.
-During the first million training steps where $\epsilon$ is linearly annealed,
-when the agent selects a random action, we usually (but not always) choose
-instead the action chosen by the classifier trained on human data. We leave a
-fixed probability of $\epsilon=0.1$ to choose random actions, in part because
-certain games have actions which appear extremely infrequently (e.g., FIRE in
-Breakout during human gameplay occurs around five times per game) but will be
-executed via these random actions. We call our method \emph{Human-Guided DQN}.
+Figure~\ref{fig:human-guided-dqn} presents the overall pipeline.  During the
+first million training steps where $\epsilon$ is linearly annealed, we choose
+the action chosen by the classifier trained on human data with probability
+$\epsilon-0.1$. We leave a fixed probability of $\epsilon=0.1$ to choose random
+actions, in part because certain games have actions which appear extremely
+infrequently (e.g., FIRE in Breakout during human gameplay occurs around five
+times per game) but will be executed via these random actions. We call our
+method \emph{Human-Guided DQN}.
 
 \subsection{Methodology and Implementation}\label{ssec:implementation}
 
@@ -221,8 +220,7 @@ tuned it (see Section~\ref{ssec:results_classifier}) to identify the strongest
 hyperparameters. We then modified a popular open-source implementation of DQN to
 load in the model weights into a new network (but with the same architecture)
 and to enable it to use the classifier during the training process. Again, our
-code is open-source on
-GitHub.\footnote{\url{https://github.com/DanielTakeshi/deep_q_rl}}
+code is open-source.\footnote{\url{https://github.com/DanielTakeshi/deep_q_rl}}
 
 
 
@@ -385,14 +383,14 @@ demonstrates examples of two states $\phi$ for each of the two games, where the
 classifier \emph{correctly} predicted the action the human player took with high
 confidence (as determined by the softmax probability distribution).
 
-In Breakout, we see that the action LEFT is chosen in a state where the ball is
-moving towards the player and to the left. The NOOP action is chosen in a state
-where the ball was just hit and is moving up, thus meaning there is no need to
-move just yet. In Space Invaders, it is advantageous to clear out columns, and
-fortunately the classifier is able to detect this on our examples.  The LEFT
-action is chosen in a state which has just one ``alien'' on the left hand column
-so that the agent can shoot it. The FIRE action is chosen in a state where the
-agent has already cleared a few aliens in a column but has not yet cleared it.
+In Breakout, LEFT is chosen in a state where the ball is moving towards the
+player and to the left. NOOP is chosen in a state where the ball was just hit
+and is moving up, thus meaning there is no need to move just yet. In Space
+Invaders, it is advantageous to clear out columns, and fortunately the
+classifier is able to detect this on our examples.  LEFT is chosen in a state
+which has just one ``alien'' on the left column so that the agent can later
+clear the column. FIRE is chosen in a state where the agent has already cleared
+a few aliens in a column but has not yet finished.
 
 
 
@@ -433,9 +431,9 @@ performing classifiers from Section~\ref{sec:results_p1}. We evaluate using
 Breakout and Space Invaders, two very different games in terms of style and
 difficulty.  To evaluate the DQN algorithms, we use two standard metrics: the
 average reward per episode, and the average action value (i.e. $Q(s,a)$-value)
-encountered. The latter is often used since it tends to have smoother curves
-than the reward per episode.  All experiments were run on a single computer with
-an NVIDIA TITAN GPU (with Pascal).
+encountered. The latter is used since it tends to have smoother curves than the
+reward per episode, but it is less intuitive.  All experiments were run on a
+single computer with an NVIDIA TITAN GPU (with Pascal).
 
 Figure~\ref{fig:human_dqn_performance} shows our results with respect to both
 games and both evaluation metrics. We see that there is no clear difference
@@ -459,15 +457,14 @@ Figure~\ref{fig:sp_inv_longer_exploration} shows the results with the improved
 experiment settings, and Figure~\ref{fig:actions_taken} also shows the
 number of times each action was taken each epoch. We see that the results of the
 two algorithms are roughly equivalent, suggesting that using the human-guided
-classifier for the random actions does not hinder performance. We also see the
-result that the FIRE LEFT and FIRE RIGHT actions are used very infrequently at
-the beginning (since our classifier rarely picks it) but are more common
-thereafter. It is interesting to note that the action distribution is roughly
-uniform, which was not the case for human expert play (see
-Figure~\ref{fig:action_distribution}). It still leads to solid performance,
-though, and the Human-Guided DQN is not superior than the default. It thus
-remains an open question as to how to best utilize human gameplay to improve
-DQN.
+classifier for the random actions does not hinder performance. We also observe
+that FIRE LEFT and FIRE RIGHT are used infrequently at the beginning (since our
+classifier rarely picks it) but are more common thereafter. It is interesting to
+note that the action distribution is roughly uniform, which was not the case for
+human expert play (see Figure~\ref{fig:action_distribution}). It still leads to
+solid performance, though, and the Human-Guided DQN is not superior than the
+default. It thus remains an open question as to how to best utilize human
+gameplay to improve DQN.
 
 \begin{figure}[t]
 \centering
