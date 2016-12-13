@@ -456,24 +456,26 @@ Invaders experiment using an exploration period 10x longer. Due to computational
 limitations, we limited the runs to 80 epochs total.
 
 Figure~\ref{fig:sp_inv_longer_exploration} shows the results with the improved
-experiment settings. We see that the results of the two algorithms are roughly
-equivalent, suggesting that using the human-guided classifier for the random
-actions does not hinder performance. The Human-Guided DQN is not superior than
-the default, however, so it remains an open question as to how to best utilize
-human gameplay to improve DQN.
-
-\textbf{TODO Actually I have room to investigate the action distributions! Let's
-do that for Space Invaders.} 
-
-See Figure~\ref{fig:actions_taken}.
-
-\textbf{Blah blah blah ...}
+experiment settings, and Figure~\ref{fig:actions_taken} also shows the
+number of times each action was taken each epoch. We see that the results of the
+two algorithms are roughly equivalent, suggesting that using the human-guided
+classifier for the random actions does not hinder performance. We also see the
+result that the FIRE LEFT and FIRE RIGHT actions are used very infrequently at
+the beginning (since our classifier rarely picks it) but are more common
+thereafter. It is interesting to note that the action distribution is roughly
+uniform, which was not the case for human expert play (see
+Figure~\ref{fig:action_distribution}). It still leads to solid performance,
+though, and the Human-Guided DQN is not superior than the default. It thus
+remains an open question as to how to best utilize human gameplay to improve
+DQN.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.30\textwidth]{figures/empty.png}
+\includegraphics[width=0.48\textwidth]{figures/fig_si_actions.png}
 \caption{\footnotesize
-\textbf{TODO ACTION DISTRIBUTION}
+The number of times each action was taken in Space Invaders during training of
+the Human-Guided DQN, where the $\epsilon$ was linearly annealed from 1.0 to 0.1
+throughout the first 40 epochs, and fixed thereafter.
 }
 \label{fig:actions_taken}
 \end{figure}
