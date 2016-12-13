@@ -420,22 +420,30 @@ $avg = 0.7\cdot avg + 0.3\cdot newscores$.
 \caption{\footnotesize
 Comparing average score per episode for standard DQN (black) versus Human-Guided
 DQN (blue) on Space Invaders. This is similar to the Space Invaders subplots of
-Figure~\ref{fig:human_dqn_performance}, except that a moving average is not
-used, and that the exploration period is 10x longer and the number of epochs has
-been reduced from 200 to 80.  (The exploration phase ``ends'' after epoch 40,
-which is when $\epsilon=0.1$.)
+Figure~\ref{fig:human_dqn_performance}, except that we do not do any smoothing,
+and that the exploration period is 10x longer and the number of epochs has been
+reduced from 200 to 80.  (The exploration phase ``ends'' after epoch 40, which
+is when $\epsilon=0.1$.)
 }
 \label{fig:sp_inv_longer_exploration}
 \end{figure}
 
-TODO
+\textbf{TODO explain setup}
 
-We ran our experiments on a single computer with an NVIDIA TITAN GPU (with
-Pascal).
+To evaluate the DQN algorithms, we use two standard metrics: the average reward
+per episode, and the average action value (i.e. $Q(s,a)$-value) encountered. The
+latter is often used since it tends to have smoother curves than the reward per
+episode.  All experiments were run on a single computer with an NVIDIA TITAN GPU
+(with Pascal).
 
-TODO
-
-Figure~\ref{fig:human_dqn_performance}
+Figure~\ref{fig:human_dqn_performance} shows our results with respect to both
+games and both evaluation metrics. We see that there is no clear difference
+between the performance of our algorithm and standard DQN for both of the
+metrics. Each curve only represents one trial due to the heavy computational
+requirements (a single run takes approximately 35 hours) so future analysis
+should consider running additional trials to obtain error bars. It is worth
+noting that Breakout is one of the easiest games for DQN to learn from, so it
+may be difficult to improve performance while sticking with the DQN framework.
 
 One factor which hinders the previous analysis\footnote{This was due to some
 extra settings inside the open source DQN code which were not obvious at first
@@ -447,7 +455,11 @@ Invaders experiment using an exploration period 10x longer. Due to computational
 limitations, we limited the runs to 80 epochs total.
 
 Figure~\ref{fig:sp_inv_longer_exploration} shows the results with the improved
-experiment settings. \textbf{TODO ANALYSIS}
+experiment settings. We see that the results of the two algorithms are roughly
+equivalent, suggesting that using the human-guided classifier for the random
+actions does not hinder performance. The Human-Guided DQN is not superior than
+the default, however, so it remains an open question as to how to best utilize
+human gameplay to improve DQN.
 
 
 
