@@ -428,13 +428,14 @@ is when $\epsilon=0.1$.)
 \label{fig:sp_inv_longer_exploration}
 \end{figure}
 
-\textbf{TODO explain setup}
-
-To evaluate the DQN algorithms, we use two standard metrics: the average reward
-per episode, and the average action value (i.e. $Q(s,a)$-value) encountered. The
-latter is often used since it tends to have smoother curves than the reward per
-episode.  All experiments were run on a single computer with an NVIDIA TITAN GPU
-(with Pascal).
+We next compare standard DQN with our Human-Guided DQN, which uses the best
+performing classifiers from Section~\ref{sec:results_p1}. We evaluate using
+Breakout and Space Invaders, two very different games in terms of style and
+difficulty.  To evaluate the DQN algorithms, we use two standard metrics: the
+average reward per episode, and the average action value (i.e. $Q(s,a)$-value)
+encountered. The latter is often used since it tends to have smoother curves
+than the reward per episode.  All experiments were run on a single computer with
+an NVIDIA TITAN GPU (with Pascal).
 
 Figure~\ref{fig:human_dqn_performance} shows our results with respect to both
 games and both evaluation metrics. We see that there is no clear difference
@@ -460,6 +461,23 @@ equivalent, suggesting that using the human-guided classifier for the random
 actions does not hinder performance. The Human-Guided DQN is not superior than
 the default, however, so it remains an open question as to how to best utilize
 human gameplay to improve DQN.
+
+\textbf{TODO Actually I have room to investigate the action distributions! Let's
+do that for Space Invaders.} 
+
+See Figure~\ref{fig:actions_taken}.
+
+\textbf{Blah blah blah ...}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.30\textwidth]{figures/empty.png}
+\caption{\footnotesize
+\textbf{TODO ACTION DISTRIBUTION}
+}
+\label{fig:actions_taken}
+\end{figure}
+
 
 
 
