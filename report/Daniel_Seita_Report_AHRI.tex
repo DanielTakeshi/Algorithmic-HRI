@@ -70,12 +70,11 @@ significantly boost the DQN algorithm by utilizing human gameplay data.
 The Deep Q-Network (DQN) algorithm trains an AI agent using a variant of
 Q-learning~\cite{Sutton_1998}. In standard Q-Learning for solving a Markov
 Decision Process, one has state-action values $Q(s,a)$ for state $s$ and action
-$a$. This is the expected sum of discounted rewards for the agent starting at
-state $s$, taking action $a$, and from then on, playing optimally according to
-the action determined by the policy.  With Atari games, the states are
-\emph{sequences} of game frames $x_1,x_2,\ldots,x_t$ encountered during game
-play. The optimal action-value function $Q$ obeys the \emph{Bellman equation}
-identity: 
+$a$. The goal is to have this value represent the expected sum of discounted
+rewards for the agent starting at state $s$, taking action $a$, and from then
+on, playing optimally. With Atari games, the states are \emph{sequences} of game
+frames $x_1,x_2,\ldots,x_t$ encountered during game play. The optimal
+action-value function $Q$ obeys the \emph{Bellman equation} identity: 
 \begin{equation}\label{eq:bellman}
 Q(s,a) = \mathbb{E}_{s'}\left[r + \gamma \cdot \max_{a'} Q(s',a') \mid s,a \right].
 \end{equation}
@@ -124,9 +123,9 @@ from~\cite{DBLP:journals/corr/HosuR16}. We aim to rectify that with this
 research, which is part of the broader category of Learning from Demonstrations.
 This area has received enormous popularity recently, boosted by the seminal work
 of Maximum Entropy IRL~\cite{Ziebart_2008_6055} and
-DAGGER~\cite{DBLP:journals/jmlr/RossGB11}.  There has been more recent work
-about adjusting humans and the loss function~\cite{conf/nips/KimFPP13}, human
-supervision of robotic
+DAgger~\cite{DBLP:journals/jmlr/RossGB11}.  There have recently been efforts to
+incorporate human trajectories into loss functions~\cite{conf/nips/KimFPP13},
+human supervision of robotic
 grasping~\cite{DBLP:journals/corr/LaskeyCLMKJDG16,DBLP:dblp_conf/icra/LaskeySHMPDG16}
 along with that of cooperation~\cite{NIPS2016_6420}.
 
@@ -212,15 +211,16 @@ that those which are designed to happen extremely infrequently are not
 considered (instead, they are played via the random actions or the standard
 Q-Network in DQN). For Deep Learning code, we use the Theano
 library~\cite{2016arXiv160502688short}.  Our classifier's code and supporting
-documents are
+documents will soon be
 open-source.\footnote{\url{https://github.com/DanielTakeshi/Algorithmic-HRI}}
 
 \subsubsection{The DQN Algorithm} Upon developing a classifier, we rigorously
 tuned it (see Section~\ref{ssec:results_classifier}) to identify the strongest
 hyperparameters. We then modified a popular open-source implementation of DQN to
 load in the model weights into a new network (but with the same architecture)
-and to enable it to use the classifier during the training process. Again, our
-code is open-source.\footnote{\url{https://github.com/DanielTakeshi/deep_q_rl}}
+and to enable it to use the classifier during the training process. Our code is
+currently
+open-source.\footnote{\url{https://github.com/DanielTakeshi/deep_q_rl}}
 
 
 
@@ -460,11 +460,11 @@ two algorithms are roughly equivalent, suggesting that using the human-guided
 classifier for the random actions does not hinder performance. We also observe
 that FIRE LEFT and FIRE RIGHT are used infrequently at the beginning (since our
 classifier rarely picks it) but are more common thereafter. It is interesting to
-note that the action distribution is roughly uniform, which was not the case for
-human expert play (see Figure~\ref{fig:action_distribution}). It still leads to
-solid performance, though, and the Human-Guided DQN is not superior than the
-default. It thus remains an open question as to how to best utilize human
-gameplay to improve DQN.
+note that the action distribution ends up being roughly uniform, which was not
+the case for human expert play (see Figure~\ref{fig:action_distribution}). It
+still leads to solid performance, though, and the Human-Guided DQN is not
+superior than the default. It thus remains an open question as to how to best
+utilize human gameplay to improve DQN.
 
 \begin{figure}[t]
 \centering
